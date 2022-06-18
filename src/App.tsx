@@ -1,38 +1,110 @@
-import * as React from "react"
-import {
-  ChakraProvider,
-  Box,
-  Text,
-  Link,
-  VStack,
-  Code,
-  Grid,
-  theme,
-} from "@chakra-ui/react"
-import { ColorModeSwitcher } from "./ColorModeSwitcher"
-import { Logo } from "./Logo"
+import { Box, ChakraProvider, theme } from "@chakra-ui/react";
+import React, { useEffect, useState } from "react";
+import { ReflexContainer, ReflexElement, ReflexSplitter } from "react-reflex";
+import "react-reflex/styles.css";
+import { Memory } from "./ui/memory";
+import { ASMRootNode } from "./assemblers/riscv/builder";
+import { CodeEditor, RangeMap, RangeMapEntry } from "./ui/CodeEditor";
+import { ASMGenerator } from "./compilers/riscv/ASMGenerator";
+import { AstNode } from "./languages/simpleC/nodes";
+import { MCGenerator } from "./assemblers/riscv/MCGenerator";
 
-export const App = () => (
-  <ChakraProvider theme={theme}>
-    <Box textAlign="center" fontSize="xl">
-      <Grid minH="100vh" p={3}>
-        <ColorModeSwitcher justifySelf="flex-end" />
-        <VStack spacing={8}>
-          <Logo h="40vmin" pointerEvents="none" />
-          <Text>
-            Edit <Code fontSize="xl">src/App.tsx</Code> and save to reload.
-          </Text>
-          <Link
-            color="teal.500"
-            href="https://chakra-ui.com"
-            fontSize="2xl"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn Chakra
-          </Link>
-        </VStack>
-      </Grid>
-    </Box>
-  </ChakraProvider>
-)
+const codeFile = require("./languages/simpleC/examples/fib.tc");
+const compiler = new ASMGenerator();
+const assembler = new MCGenerator();
+
+export const App = () => {
+  const [code, setCode] = useState("");
+  const [asm, setAsm] = useState("");
+  const [memory, setMemory] = React.useState([]);
+
+  const [asmPos, setAsmPos] = useState(0);
+  const [codePos, setCodePos] = useState(0);
+  const [memPos, setMemPos] = useState(0);
+
+  const updateCodePos = (pos: number) => setCodePos(pos);
+  const updateAsmPos = (pos: number) => setAsmPos(pos);
+  const updateMemPos = (pos: number) => setMemPos(pos);
+
+  const [codeRange, setCodeRange] = useState<[number, number]>();
+  const [asmRange, setAsmRange] = useState<[number, number]>();
+
+  const [codeAsmRangeMap, setCodeAsmRangeMap] = useState<RangeMap>([]);
+  const [asmMachineCodeRangeMap, setAsmMachineCodeRangeMap] = useState<RangeMap>([]);
+
+  useEffect(() => {
+    fetch(codeFile)
+      .then((response) => response.text())
+      .then((textContent) => {
+        setCode(textContent);
+      });
+  });
+
+  const updateCAst = (ast: AstNode) => {
+    const { code: asm, rangeMap } = compiler.codegen(ast);
+    setAsm(asm);
+    setCodeAsmRangeMap(rangeMap);
+  };
+
+  const updateAsmAst = (ast: ASMRootNode) => {
+    const { instructions, rangeMap } = assembler.codegen(ast);
+    setMemory(instructions.map((i) => i.machineCode));
+    setAsmMachineCodeRangeMap(rangeMap);
+  };
+
+  useEffect(() => {
+    // find the rangemap entry for the current asm position
+    const codeRange = codeAsmRangeMap
+      .slice()
+      .reverse()
+      .find((x) => asmPos >= x.right[0] && asmPos <= x.right[1]);
+    if (codeRange) setCodeRange(codeRange.left);
+  }, [asmPos, codeAsmRangeMap]);
+
+  // useEffect(() => {
+  //   if (asmPos) {
+  //     console.log(asmPos);
+  //     cmCodeRef.current.view.focus();
+  //     const posMap = positionMap
+  //       .slice()
+  //       .reverse()
+  //       .find((x) => asmPos >= x.asm[0] && asmPos <= x.asm[1]);
+  //     if (posMap) {
+  //       cmCodeRef.current.view.dispatch(cmCodeRef.current.view.state.update({ selection: EditorSelection.cursor(posMap.code[0]) }));
+  //     }
+  //   }
+
+  //   if (cmAsmRef.current?.view) console.log("view:", cmAsmRef.current.view);
+  //   if (cmAsmRef.current?.state) console.log("state:", cmAsmRef.current.state);
+  // }, [asmPos]);
+
+  return (
+    <ChakraProvider theme={theme}>
+      <Box fontSize="xl" h="100vh">
+        <ReflexContainer orientation="vertical">
+          <ReflexElement className="c-pane">
+            <CodeEditor code={code} lang="simpleC" updateAst={updateCAst} updatePos={updateCodePos} highlightRange={codeRange}></CodeEditor>
+          </ReflexElement>
+
+          <ReflexSplitter />
+
+          <ReflexElement className="asm-pane">
+            <CodeEditor code={asm} lang="simpleASM" updateAst={updateAsmAst} updatePos={updateAsmPos} highlightRange={asmRange}></CodeEditor>
+          </ReflexElement>
+
+          <ReflexSplitter />
+
+          <ReflexElement className="mem-pane">
+            <Memory memory={memory}></Memory>
+          </ReflexElement>
+
+          <ReflexSplitter />
+
+          <ReflexElement className="sim-pane">
+            <Box>simulator</Box>
+          </ReflexElement>
+        </ReflexContainer>
+      </Box>
+    </ChakraProvider>
+  );
+};

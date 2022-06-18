@@ -1,0 +1,176 @@
+// // boolean expressions
+// assert(true || false);
+// assert(!false);
+// assert(true && true);
+// assert(!true || !false);
+// assert(true && (true || false));
+
+// // relational expressions
+// assert(1 < 2);
+// assert(666 >= 666);
+// assert(-5 > -6);
+// assert(0 >= -1);
+
+// // add
+// assert(1 + 999 == 1000);
+// assert(2 - -2 == 4);
+// assert(-1 + 1 == 0);
+// assert(1 - 50 == -49);
+
+// // multiply
+// assert(3 * 50 == 150);
+// assert(4 / 2 == 2);
+// assert(1 / 4 == 0.25);
+// assert(999999 % 3 == 0);
+// assert(-5 * -5 == 25);
+
+// // power
+// assert(2^10 == 1024);
+// assert(3^3 == 27);
+// assert(4^3^2 == 262144); // power is right associative
+// assert((4^3)^2 == 4096);
+
+// for- and while statements
+// int a=0;
+// for (int i=1; i<=10; i=i+1) {
+//   a = a + i;
+// }
+// assert(a == (1+2+3+4+5+6+7+8+9+10));
+
+// int b = -10;
+// int c = 0;
+// while (b < 0) {
+//   c = c + b;
+//   b = b + 1;
+// }
+// assert(c == -(1+2+3+4+5+6+7+8+9+10));
+
+// if
+// int a = 123;
+// if (a < 200) {
+//   assert(true);
+// }
+
+// if (a < 100)
+//   assert(false);
+// else
+//   assert(true);
+
+// switch
+// int x = 5;
+// switch (x) {
+//   case 1 : assert(false); break;
+//   case 2 : assert(false); break;
+//   case 3 : assert(false); break;
+//   case 4 : assert(false); break;
+//   case 5 : assert(true); break;
+//   case 6 : assert(false); break;
+//   default: assert(false);
+// }
+
+// functions
+// int squared(int n) {
+//   return n*n;
+// }
+
+// int twice(int n) {
+//   int temp = n + n;
+//   return temp;
+// }
+
+// int squaredAndTwice(int n) {
+//   return twice(squared(n));
+// }
+
+// assert(squared(666) == 666^2);
+// assert(twice(squared(5)) == 50);
+// assert(squaredAndTwice(10) == 200);
+// assert(squared(squared(squared(2))) == ((2^2)^2)^2);
+
+// recursive calls
+int fib(int n)
+{
+  // 0 1 (0 + 1)
+  if (n < 2)
+    return n;
+  else
+    return fib(n - 2) + fib(n - 1);
+}
+
+int main()
+{
+  for (int i = 0; i < 10; i = i + 1)
+  {
+    print_int(fib(i));
+    print_string("\n");
+  }
+}
+
+// int x[10];
+// x[2]=5;
+// print("x[2]=",x[2]);
+
+// printf
+// for (int x = 0; x < 5; x=x+1)
+//   printf("x = %i\n", x);
+
+// int x;
+// x = 2 + 3;
+// printf("")
+// printf("printf: x=%i", x);
+// return x;
+
+// int sum2(int n)
+// {
+//   int x = 0;
+//   for (int i = 0; i < n; i = i + 1)
+//   {
+//     x = x + 1;
+//   }
+//   return x;
+// }
+
+// int sum()
+// {
+//   int i = 0;
+//   int x = 0;
+//   while (i < 10)
+//   {
+//     print_int(sum2(i));
+//     i = i + 1;
+//   }
+//   return x;
+// }
+
+// int main()
+// {
+//   int answer = sum();
+//   return 0;
+// }
+
+// int main()
+// {
+//   int x = 10;
+//   int y = 5;
+//   while (x > 0)
+//   {
+//     int z = 2;
+//     x = x - 1;
+//     print_int(x);
+//   }
+//   return 0;
+// }
+
+// int sum(int x, int y)
+// {
+//   return x + y;
+// }
+
+// int main()
+// {
+//   int a = 10;
+//   int b = 200;
+//   int c = 3000;
+//   int d = 40000;
+//   print_int(sum(a, b) + sum(c, d));
+// }
