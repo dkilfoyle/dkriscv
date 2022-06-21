@@ -19,7 +19,7 @@ import { getBits } from "../../utils/bits";
 import { Instruction } from "./Instruction";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
 
-const registerNumbers = {
+export const registerNumbers = {
   zero: 0,
   ra: 1,
   sp: 2,
@@ -86,6 +86,8 @@ const registerNumbers = {
   x30: 30,
   x31: 31,
 };
+
+export const registerNames = Object.keys(registerNumbers);
 
 // prettier-ignore
 const pseudos = {
@@ -181,7 +183,8 @@ export class SimpleASMAstBuilder extends AbstractParseTreeVisitor<ASMRootNode> i
   }
 
   getPos(ctx: ParserRuleContext): [number, number] {
-    return [ctx.start.line, ctx.start.charPositionInLine];
+    // return [ctx.start.line, ctx.start.charPositionInLine];
+    return [ctx.start.startIndex, ctx.stop.stopIndex];
   }
 
   visitData(ctx: DataContext) {

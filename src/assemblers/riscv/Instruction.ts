@@ -3,50 +3,158 @@
 // {             imm[11:0]           } {     rs1    } {  f3  } {      rd    } {      opcode      }   I Type
 // {     imm[11:5]    } {     rs2    } {     rs1    } {  f3  } {  imm[4:0]  } {      opcode      }   S Type
 
-import { getBits, maskBits } from "../../utils/bits";
+import { getBits, maskBits, signedSlice, unsignedSlice } from "../../utils/bits";
 import { SymbolTable } from "./builder";
+
+// Base opcodes.
+const OP_LOAD = 0x03;
+const OP_IMM = 0x13;
+const OP_AUIPC = 0x17;
+const OP_STORE = 0x23;
+const OP_REG = 0x33;
+const OP_LUI = 0x37;
+const OP_BRANCH = 0x63;
+const OP_JALR = 0x67;
+const OP_JAL = 0x6f;
+const OP_SYSTEM = 0x73;
+
+// Funct3 opcodes.
+const F3_JALR = 0;
+const F3_BEQ = 0;
+const F3_BNE = 1;
+const F3_BLT = 4;
+const F3_BGE = 5;
+const F3_BLTU = 6;
+const F3_BGEU = 7;
+const F3_B = 0;
+const F3_H = 1;
+const F3_W = 2;
+const F3_BU = 4;
+const F3_HU = 5;
+const F3_ADD = 0;
+const F3_SL = 1;
+const F3_SLT = 2;
+const F3_SLTU = 3;
+const F3_XOR = 4;
+const F3_SR = 5;
+const F3_OR = 6;
+const F3_AND = 7;
+const F3_MRET = 0;
+
+// Funct7 opcodes.
+const F7_L = 0;
+const F7_A = 32;
+const F7_MRET = 24;
+
+const OPCODE_TO_FORMAT = {
+  [OP_REG]: "R",
+  [OP_LOAD]: "I",
+  [OP_IMM]: "I",
+  [OP_JALR]: "I",
+  [OP_SYSTEM]: "I",
+  [OP_STORE]: "S",
+  [OP_BRANCH]: "B",
+  [OP_AUIPC]: "U",
+  [OP_LUI]: "U",
+  [OP_JAL]: "J",
+};
 
 // prettier-ignore
 export const operations = {
   //       fmt  opcode     f3   f7
-  add:   [ "R", 0b0110011, 0x0, 0x00 ], // __ rd, rs1, rs2 
-  sub:   [ "R", 0b0110011, 0x0, 0x20 ], // __ rd, rs1, rs2
-  xor:   [ "R", 0b0110011, 0x4, 0x00 ], // __ rd, rs1, rs2
-  or:    [ "R", 0b0110011, 0x6, 0x00 ], // __ rd, rs1, rs2
-  and:   [ "R", 0b0110011, 0x7, 0x00 ], // __ rd, rs1, rs2
-  sll:   [ "R", 0b0110011, 0x1, 0x00 ], // __ rd, rs1, rs2
-  srl:   [ "R", 0b0110011, 0x5, 0x00 ], // __ rd, rs1, rs2
-  sra:   [ "R", 0b0110011, 0x5, 0x20 ], // __ rd, rs1, rs2
-  slt:   [ "R", 0b0110011, 0x2, 0x00 ], // __ rd, rs1, rs2
-  sltu:  [ "R", 0b0110011, 0x3, 0x00 ], // __ rd, rs1, rs2
-  addi:  [ "I", 0b0010011, 0x0,      ], // __ rd, rs1, imm
-  xori:  [ "I", 0b0010011, 0x4,      ], // __ rd, rs1, imm
-  ori:   [ "I", 0b0010011, 0x6,      ], // __ rd, rs1, imm
-  andi:  [ "I", 0b0010011, 0x7,      ], // __ rd, rs1, imm
-  slli:  [ "I", 0b0010011, 0x1,      ], // __ rd, rs1, imm
-  srli:  [ "I", 0b0010011, 0x5,      ], // __ rd, rs1, imm
-  srai:  [ "I", 0b0010011, 0x5,      ], // __ rd, rs1, imm
-  slti:  [ "I", 0b0010011, 0x2,      ], // __ rd, rs1, imm
-  sltiu: [ "I", 0b0010011, 0x3,      ], // __ rd, rs1, imm
-  lb:    [ "I", 0b0000011, 0x0,      ], // l__ rd, rs1, imm
-  lh:    [ "I", 0b0000011, 0x1,      ], // l__ rd, rs1, imm
-  lw:    [ "I", 0b0000011, 0x2,      ], // l__ rd, rs1, imm
-  lbu:   [ "I", 0b0000011, 0x4,      ], // l__ rd, rs1, imm
-  lhu:   [ "I", 0b0000011, 0x5,      ], // l__ rd, rs1, imm
-  sb:    [ "S", 0b0100011, 0x0,      ], // s_  rs1, rs2, imm
-  sh:    [ "S", 0b0100011, 0x1,      ], // s_  rs1, rs2, imm
-  sw:    [ "S", 0b0100011, 0x2,      ], // s_  rs1, rs2, imm
-  beq:   [ "B", 0b1100011, 0x0,      ], // b__ rs1, rs2, imm 
-  bne:   [ "B", 0b1100011, 0x1,      ], // b__ rs1, rs2, imm
-  blt:   [ "B", 0b1100011, 0x4,      ], // b__ rs1, rs2, imm
-  bge:   [ "B", 0b1100011, 0x5,      ], // b__ rs1, rs2, imm
-  bltu:  [ "B", 0b1100011, 0x6,      ], // b__ rs1, rs2, imm
-  bgeu:  [ "B", 0b1100011, 0x7,      ], // b__ rs1, rs2, imm
-  jal:   [ "J", 0b1101111,           ], // jal rd, imm
-  jalr:  [ "I", 0b1100111, 0x0,      ], // jalr rd, rs1, imm
-  lui:   [ "U", 0b0110111,           ],
-  auipc: [ "U", 0b0010111,           ],
-  ecall: [ "I", 0b1110011, 0x0,      ]
+  add:   [OP_REG,    F3_ADD,  F7_L], // __ rd, rs1, rs2
+  sub:   [OP_REG,    F3_ADD,  F7_A], // __ rd, rs1, rs2
+  sll:   [OP_REG,    F3_SL,   F7_L], // __ rd, rs1, rs2
+  slt:   [OP_REG,    F3_SLT,  F7_L], // __ rd, rs1, rs2
+  sltu:  [OP_REG,    F3_SLTU, F7_L], // __ rd, rs1, rs2
+  xor:   [OP_REG,    F3_XOR,  F7_L], // __ rd, rs1, rs2
+  srl:   [OP_REG,    F3_SR,   F7_L], // __ rd, rs1, rs2
+  sra:   [OP_REG,    F3_SR,   F7_A], // __ rd, rs1, rs2
+  or:    [OP_REG,    F3_OR,   F7_L], // __ rd, rs1, rs2
+  and:   [OP_REG,    F3_AND,  F7_L], // __ rd, rs1, rs2
+
+  addi:  [OP_IMM,    F3_ADD       ], // __ rd, rs1, imm
+  xori:  [OP_IMM,    F3_XOR       ], // __ rd, rs1, imm
+  ori:   [OP_IMM,    F3_OR        ], // __ rd, rs1, imm
+  andi:  [OP_IMM,    F3_AND       ], // __ rd, rs1, imm
+  slli:  [OP_IMM,    F3_SL,   F7_L], // __ rd, rs1, imm
+  srli:  [OP_IMM,    F3_SR,   F7_L], // __ rd, rs1, imm
+  srai:  [OP_IMM,    F3_SR,   F7_A], // __ rd, rs1, imm
+  slti:  [OP_IMM,    F3_SLT       ], // __ rd, rs1, imm
+  sltiu: [OP_IMM,    F3_SLTU      ], // __ rd, rs1, imm
+
+  lb:    [OP_LOAD,   F3_B         ], // l__ rd, rs1, imm
+  lh:    [OP_LOAD,   F3_H         ], // l__ rd, rs1, imm
+  lw:    [OP_LOAD,   F3_W         ], // l__ rd, rs1, imm
+  lbu:   [OP_LOAD,   F3_BU        ], // l__ rd, rs1, imm
+  lhu:   [OP_LOAD,   F3_HU        ], // l__ rd, rs1, imm
+  
+  sb:    [OP_STORE,  F3_B         ], // s_  rs1, rs2, imm
+  sh:    [OP_STORE,  F3_H         ], // s_  rs1, rs2, imm
+  sw:    [OP_STORE,  F3_W         ], // s_  rs1, rs2, imm
+  
+  beq:   [OP_BRANCH, F3_BEQ       ], // b__ rs1, rs2, imm
+  bne:   [OP_BRANCH, F3_BNE       ], // b__ rs1, rs2, imm
+  blt:   [OP_BRANCH, F3_BLT       ], // b__ rs1, rs2, imm
+  bge:   [OP_BRANCH, F3_BGE       ], // b__ rs1, rs2, imm
+  bltu:  [OP_BRANCH, F3_BLTU      ], // b__ rs1, rs2, imm
+  bgeu:  [OP_BRANCH, F3_BGEU      ], // b__ rs1, rs2, imm
+  
+  jal:   [OP_JAL                  ], // jal rd, imm
+  jalr:  [OP_JALR,   F3_JALR      ], // jalr rd, rs1, imm
+  lui:   [OP_LUI                  ],
+  auipc: [OP_AUIPC                ],
+  ecall: [OP_SYSTEM, 0x0          ],
+};
+
+// Reverse INSTR_NAME_TO_FIELDS into a tree to decode field values.
+// Use hash maps instead of plain objects to avoid converting numeric keys
+// to strings.
+function addToTree(tree, name, path, index) {
+  const fieldValue = path[index];
+  if (index === path.length - 1) {
+    tree.set(fieldValue, name);
+  } else {
+    if (!tree.has(fieldValue)) {
+      tree.set(fieldValue, new Map());
+    }
+    addToTree(tree.get(fieldValue), name, path, index + 1);
+  }
+}
+
+export const fieldTree = new Map();
+for (let [name, path] of Object.entries(operations)) {
+  addToTree(fieldTree, name, path, 0);
+}
+
+// prettier-ignore
+const FORMAT_TO_IMM_SLICES = {
+    I : [[31, 20, 0 ]                                         ],
+    S : [[31, 25, 5 ], [11, 7, 0  ]                           ],
+    B : [[31, 31, 12], [7 , 7, 11 ], [30, 25, 5 ], [11, 8 , 1]],
+    U : [[31, 12, 12]                                         ],
+    J : [[31, 31, 20], [19, 12, 12], [20, 20, 11], [30, 21, 1]],
+};
+
+function decodeImmediate({ opcode, funct3, rs2 }, format: InstructionType, word: number) {
+  if (opcode === OP_IMM && (funct3 === F3_SL || funct3 === F3_SR)) {
+    return rs2;
+  }
+
+  if (!(format in FORMAT_TO_IMM_SLICES)) {
+    return 0;
+  }
+
+  const slices = FORMAT_TO_IMM_SLICES[format];
+
+  let slicer = signedSlice;
+  let res = 0;
+  for (let [left, right, pos] of slices) {
+    res |= slicer(word, left, right, pos);
+    slicer = unsignedSlice;
+  }
+
+  return res;
 }
 
 const instructionFields = {
@@ -89,16 +197,14 @@ export class Instruction {
   iType: InstructionType;
   opName: string;
   params: InstructionParameters;
-  line: number;
-  col: number;
+  pos: [number, number]; // start, stop in asm code
   machineCode: number;
 
   constructor(opName: string, params: InstructionParameters, pos: [number, number]) {
-    this.iType = operations[opName][0];
+    this.iType = OPCODE_TO_FORMAT[operations[opName][0]];
     this.opName = opName;
     this.params = params;
-    this.line = pos[0];
-    this.col = pos[1];
+    this.pos = pos;
     this.machineCode = 0;
   }
 
@@ -175,6 +281,30 @@ export class Instruction {
         throw new Error();
     }
     this.machineCode = code >>> 0;
+  }
+
+  static Decode(x: number) {
+    const fields = {
+      opcode: unsignedSlice(x, 6, 0),
+      funct3: unsignedSlice(x, 14, 12),
+      funct7: unsignedSlice(x, 31, 25),
+      rs2: unsignedSlice(x, 24, 20),
+      rs1: unsignedSlice(x, 19, 15),
+      rd: unsignedSlice(x, 11, 7),
+    };
+
+    let tree = fieldTree;
+    for (let fieldValue of Object.values(fields)) {
+      tree = tree.get(fieldValue) || "invalid";
+      if (!(tree instanceof Map)) {
+        break;
+      }
+    }
+
+    const opName = tree as unknown as string;
+    console.log("Decode", x, opName);
+
+    return new Instruction(tree as unknown as string, { ...fields, imm: decodeImmediate(fields, operations[opName][0], x) }, [0, 0]);
   }
 
   formatMachineCode() {

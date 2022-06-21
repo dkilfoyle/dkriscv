@@ -85,14 +85,14 @@ export const CodeEditor = (props: {
       attributes: { class: "cm-zebraStripe" },
     });
     let builder = new RangeSetBuilder<Decoration>();
-    for (let { from, to } of view.visibleRanges) {
-      for (let pos = from; pos <= to; ) {
-        let line = view.state.doc.lineAt(pos);
-        console.log(pos, props.highlightRange[0], props.highlightRange[1]);
-        if (pos >= props.highlightRange[0] && pos <= props.highlightRange[1]) builder.add(line.from, line.from, stripe);
-        pos = line.to + 1;
+    if (props.highlightRange)
+      for (let { from, to } of view.visibleRanges) {
+        for (let pos = from; pos <= to; ) {
+          let line = view.state.doc.lineAt(pos);
+          if (pos >= props.highlightRange[0] && pos <= props.highlightRange[1]) builder.add(line.from, line.from, stripe);
+          pos = line.to + 1;
+        }
       }
-    }
     return builder.finish();
   }
 
@@ -105,9 +105,7 @@ export const CodeEditor = (props: {
       }
 
       update(update: ViewUpdate) {
-        // if (update.docChanged || update.viewportChanged)
-        this.decorations = rangeDeco(update.view);
-        console.log(this.decorations);
+        if (update.docChanged || update.viewportChanged) this.decorations = rangeDeco(update.view);
       }
     },
     {

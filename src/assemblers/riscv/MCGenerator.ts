@@ -17,12 +17,21 @@ export class MCGenerator {
     this.instructions = root.instructions;
     this.symbols = root.symbols;
     this.dataSection = root.dataSection;
-    this.buildMachineCode();
-    return { instructions: this.instructions, rangeMap: this.rangeMap };
-  }
 
-  buildMachineCode() {
-    this.instructions.forEach((ins, i) => ins.encode(i, this.symbols));
+    this.instructions.forEach((ins, i) => {
+      ins.encode(i, this.symbols);
+      this.rangeMap.push({ left: ins.pos, right: [i, i] });
+    });
+
+    Object.keys(this.symbols).forEach((symName, i) => {
+      const instNum = this.symbols[symName] / 4;
+      if (instNum < this.instructions.length) {
+        const inst = this.instructions[instNum];
+        this.rangeMap.push({ left: inst.pos, right: [instNum, instNum] });
+      }
+    });
+
+    return { instructions: this.instructions, rangeMap: this.rangeMap };
   }
 
   printSymbols() {

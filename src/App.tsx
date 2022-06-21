@@ -2,16 +2,19 @@ import { Box, ChakraProvider, theme } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 import { ReflexContainer, ReflexElement, ReflexSplitter } from "react-reflex";
 import "react-reflex/styles.css";
-import { Memory } from "./ui/memory";
 import { ASMRootNode } from "./assemblers/riscv/builder";
 import { CodeEditor, RangeMap, RangeMapEntry } from "./ui/CodeEditor";
 import { ASMGenerator } from "./compilers/riscv/ASMGenerator";
 import { AstNode } from "./languages/simpleC/nodes";
 import { MCGenerator } from "./assemblers/riscv/MCGenerator";
+import { Schematic } from "./ui/schematic/schematic";
+import { Computer } from "./simulator/System";
 
 const codeFile = require("./languages/simpleC/examples/fib.tc");
 const compiler = new ASMGenerator();
 const assembler = new MCGenerator();
+
+const computer = new Computer();
 
 export const App = () => {
   const [code, setCode] = useState("");
@@ -28,6 +31,7 @@ export const App = () => {
 
   const [codeRange, setCodeRange] = useState<[number, number]>();
   const [asmRange, setAsmRange] = useState<[number, number]>();
+  const [memRange, setMemRange] = useState<[number, number]>();
 
   const [codeAsmRangeMap, setCodeAsmRangeMap] = useState<RangeMap>([]);
   const [asmMachineCodeRangeMap, setAsmMachineCodeRangeMap] = useState<RangeMap>([]);
@@ -48,7 +52,8 @@ export const App = () => {
 
   const updateAsmAst = (ast: ASMRootNode) => {
     const { instructions, rangeMap } = assembler.codegen(ast);
-    setMemory(instructions.map((i) => i.machineCode));
+    // setMemory(instructions.map((i) => i.machineCode));
+    instructions.forEach((ins, i) => computer.mem.write(i * 4, 4, ins.machineCode));
     setAsmMachineCodeRangeMap(rangeMap);
   };
 
@@ -58,8 +63,34 @@ export const App = () => {
       .slice()
       .reverse()
       .find((x) => asmPos >= x.right[0] && asmPos <= x.right[1]);
-    if (codeRange) setCodeRange(codeRange.left);
+    if (codeRange) {
+      setCodeRange(codeRange.left);
+      setAsmRange(codeRange.right);
+    }
   }, [asmPos, codeAsmRangeMap]);
+
+  useEffect(() => {
+    // find the rangemap entry for the current asm position
+    const codeRange = codeAsmRangeMap
+      .slice()
+      .reverse()
+      .find((x) => codePos >= x.left[0] && codePos <= x.left[1]);
+    if (codeRange) {
+      setCodeRange(codeRange.left);
+      setAsmRange(codeRange.right);
+    }
+  }, [codePos, codeAsmRangeMap]);
+
+  useEffect(() => {
+    // find the rangemap entry for the current asm position
+    const codeRange = asmMachineCodeRangeMap
+      .slice()
+      .reverse()
+      .find((x) => asmPos >= x.left[0] && asmPos <= x.left[1]);
+    if (codeRange) {
+      setMemRange(codeRange.right);
+    }
+  }, [asmPos, asmMachineCodeRangeMap]);
 
   // useEffect(() => {
   //   if (asmPos) {
@@ -94,14 +125,8 @@ export const App = () => {
 
           <ReflexSplitter />
 
-          <ReflexElement className="mem-pane">
-            <Memory memory={memory}></Memory>
-          </ReflexElement>
-
-          <ReflexSplitter />
-
           <ReflexElement className="sim-pane">
-            <Box>simulator</Box>
+            <Schematic computer={computer} memoryHighlightRange={memRange}></Schematic>
           </ReflexElement>
         </ReflexContainer>
       </Box>
