@@ -157,28 +157,38 @@ function decodeImmediate({ opcode, funct3, rs2 }, format: InstructionType, word:
   return res;
 }
 
-const instructionFields = {
-  all: maskBits(0, 31),
-  opcode: maskBits(0, 6),
-  funct3: maskBits(12, 14),
-  funct5: maskBits(27, 13),
-  funct7: maskBits(25, 31),
-  rd: maskBits(7, 11),
-  rs1: maskBits(15, 19),
-  rs2: maskBits(20, 24),
-  rs3: maskBits(27, 31),
-  imm_11_0: maskBits(20, 31),
-  imm_4_0: maskBits(7, 11),
-  imm_11_5: maskBits(25, 31),
-  imm_11b: maskBits(7),
-  imm_4_1: maskBits(8, 11),
-  imm_10_5: maskBits(25, 30),
-  imm_12: maskBits(31),
-  imm_31_12: maskBits(12, 31),
-  imm_19_12: maskBits(12, 19),
-  imm_11j: maskBits(20),
-  imm_10_1: maskBits(21, 30),
-  imm_20: maskBits(31),
+//prettier-ignore
+export const instructionFields: Record<string, [number, number?]> = {
+  all:        [31,  0],
+  opcode:     [6,   0],
+  funct3:     [14, 12],
+  funct5:     [13, 27],
+  funct7:     [31, 25],
+  rd:         [11,  7],
+  rs1:        [19, 15],
+  rs2:        [24, 20],
+  rs3:        [31, 27],
+  imm_11_0:   [31, 20],
+  imm_4_0:    [11,  7],
+  imm_11_5:   [31, 25],
+  imm_11b:    [7     ],
+  imm_4_1:    [11,  8],
+  imm_10_5:   [30, 25],
+  imm_12:     [31    ],
+  imm_31_12:  [31, 12],
+  imm_19_12:  [19, 12],
+  imm_11j:    [20    ],
+  imm_10_1:   [30, 21],
+  imm_20:     [31    ],
+};
+
+export const instructionFormats = {
+  R: ["funct7", "rs2", "rs1", "funct3", "rd", "opcode"],
+  I: ["imm_11_0", "rs1", "funct3", "rd", "opcode"],
+  U: ["imm_31_12", "rd", "opcode"],
+  S: ["imm_11_5", "rs2", "rs1", "funct3", "imm_4_0", "opcode"],
+  B: ["imm_12", "imm_10_5", "rs2", "rs1", "funct3", "imm_4_1", "imm_11b", "opcode"],
+  J: ["imm_20", "imm_10_1", "imm_11j", "imm_19_12", "rd", "opcode"],
 };
 
 type InstructionType = "I" | "R" | "S" | "B" | "J" | "U";
@@ -228,13 +238,14 @@ export class Instruction {
     }
 
     const setCode = (code: number, field: string, value: number) => {
-      const [lo, mask] = instructionFields[field];
+      const [lo, mask] = maskBits(...instructionFields[field]);
       return (code & ~(mask << lo)) | ((value & mask) << lo);
     };
 
     const [, opcode, funct3, funct7] = operations[this.opName];
 
     let code = 0;
+
     code = setCode(code, "opcode", opcode);
     switch (this.iType) {
       case "I":
@@ -309,6 +320,15 @@ export class Instruction {
 
   formatMachineCode() {
     return "0x" + this.machineCode.toString(16).padStart(8, "0");
+  }
+
+  getFields() {
+    let x = this.machineCode;
+    let slice = unsignedSlice;
+    switch (this.iType) {
+      case "R":
+        return [slice(x, 31, 25), slice(x, 24, 20), slice(x, 19, 15), slice(x, 14, 12), slice(x, 11, 7), slice(x, 6, 0)];
+    }
   }
 
   formatInstruction() {

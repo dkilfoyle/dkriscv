@@ -1,6 +1,6 @@
 import { workerData } from "worker_threads";
 
-export const maskBits = (lo: number, hi: number = lo) => {
+export const maskBits = (hi: number, lo: number = hi) => {
   let mask = 0;
   for (let i = lo, j = 0; i <= hi; i++, j++) mask |= 1 << j;
   return [lo, mask];
