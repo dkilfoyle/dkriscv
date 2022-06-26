@@ -1,10 +1,13 @@
-import { Button, ButtonGroup, HStack, Spacer, Table, TableContainer, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
-import { useState } from "react";
-import { Processor } from "../../simulator/Processor";
+import { HStack, Spacer, Table, TableContainer, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
+import { useContext } from "react";
+import { ComputerContext } from "../../App";
+import { useFormat } from "../../utils/useFormat";
 import "./schematic.css";
 
-export const ALU = (props: { cpu: Processor }) => {
-  const [format, setFormat] = useState(10);
+export const ALU = () => {
+  const { FormatSelector, formatFn } = useFormat(10);
+  const computer = useContext(ComputerContext);
+  const cpu = computer.cpu;
   return (
     <TableContainer>
       <Table size="xs">
@@ -13,14 +16,7 @@ export const ALU = (props: { cpu: Processor }) => {
             <Th colSpan={3}>
               <HStack>
                 <span style={{ paddingLeft: "10px" }}>ALU</span> <Spacer></Spacer>
-                <ButtonGroup size="xs" isAttached variant="outline">
-                  <Button onClick={() => setFormat(10)} size="xs">
-                    D
-                  </Button>
-                  <Button onClick={() => setFormat(16)} size="xs">
-                    H
-                  </Button>
-                </ButtonGroup>
+                <FormatSelector />
               </HStack>
             </Th>
           </Tr>
@@ -28,23 +24,23 @@ export const ALU = (props: { cpu: Processor }) => {
         <Tbody fontFamily="monospace">
           <Tr>
             <td align="center">op</td>
-            <td align="right">{props.cpu.datapath.aluOp}</td>
+            <td align="right">{cpu.datapath.aluOp}</td>
             <td></td>
           </Tr>
           <Tr>
             <td align="center">a</td>
-            <td align="right">{props.cpu.datapath.src1 === "x1" ? "x" + props.cpu.instr.params.rs1 : "pc"}</td>
-            <td className="value">{props.cpu.datapath.src1 === "x1" ? props.cpu.x1 : props.cpu.pc}</td>
+            <td align="right">{cpu.datapath.src1 === "x1" ? "x" + cpu.instr.params.rs1 : "pc"}</td>
+            <td className="value">{cpu.datapath.src1 === "x1" ? formatFn(cpu.x1) : formatFn(cpu.pc)}</td>
           </Tr>
           <Tr>
             <td align="center">b</td>
-            <td align="right">{props.cpu.datapath.src2 === "x2" ? "x" + props.cpu.instr.params.rs2 : "imm"}</td>
-            <td className="value">{props.cpu.datapath.src2 === "x2" ? props.cpu.x2 : props.cpu.instr.params.imm}</td>
+            <td align="right">{cpu.datapath.src2 === "x2" ? "x" + cpu.instr.params.rs2 : "imm"}</td>
+            <td className="value">{cpu.datapath.src2 === "x2" ? formatFn(cpu.x2) : formatFn(cpu.instr.params.imm)}</td>
           </Tr>
           <Tr>
             <td align="center">r</td>
             <td></td>
-            <td className="value">{props.cpu.aluResult}</td>
+            <td className="value">{formatFn(cpu.aluResult)}</td>
           </Tr>
         </Tbody>
       </Table>

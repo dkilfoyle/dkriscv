@@ -1,11 +1,14 @@
-import { Table, TableContainer, Td, Th, Tr, Tbody, Thead, Stack, Button, HStack, ButtonGroup } from "@chakra-ui/react";
-import { useState } from "react";
-import { Memory } from "../../simulator/Memory";
-import { getBytes, unsignedSlice } from "../../utils/bits";
+import { Table, TableContainer, Td, Th, Tr, Tbody, Thead, Button, HStack, ButtonGroup } from "@chakra-ui/react";
+import { useContext, useState } from "react";
+import { ComputerContext } from "../../App";
+import { getBytes } from "../../utils/bits";
 
-export const Ram = (props: { memory: Memory; highlightRange?: [number, number] }) => {
+export const Ram = (props: { highlightRange?: [number, number] }) => {
   const style = (i) =>
     props.highlightRange && i >= props.highlightRange[0] && i <= props.highlightRange[1] ? { backgroundColor: "#d4fafa" } : {};
+
+  const computer = useContext(ComputerContext);
+  const memory = computer.mem;
 
   const [memFormat, setMemFormat] = useState("bytes");
   const formatMem = (i) => {
@@ -15,25 +18,25 @@ export const Ram = (props: { memory: Memory; highlightRange?: [number, number] }
           <Td>
             <HStack>
               <span>
-                {props.memory
+                {memory
                   .localRead(i * 4 + 3, 1)
                   .toString(16)
                   .padStart(2, "0")}
               </span>
               <span>
-                {props.memory
+                {memory
                   .localRead(i * 4 + 2, 1)
                   .toString(16)
                   .padStart(2, "0")}
               </span>
               <span>
-                {props.memory
+                {memory
                   .localRead(i * 4 + 1, 1)
                   .toString(16)
                   .padStart(2, "0")}
               </span>
               <span>
-                {props.memory
+                {memory
                   .localRead(i * 4, 1)
                   .toString(16)
                   .padStart(2, "0")}
@@ -42,13 +45,13 @@ export const Ram = (props: { memory: Memory; highlightRange?: [number, number] }
           </Td>
         );
       case "decimal":
-        return <Td>{props.memory.localRead(i * 4, 4)}</Td>;
+        return <Td>{memory.localRead(i * 4, 4)}</Td>;
       case "unsigned":
-        return <Td>{props.memory.localRead(i * 4, 4) >>> 0}</Td>;
+        return <Td>{memory.localRead(i * 4, 4) >>> 0}</Td>;
       case "string":
         return (
           <Td>
-            {getBytes(props.memory.localRead(i * 4, 4)).reduce((prev, cur) => {
+            {getBytes(memory.localRead(i * 4, 4)).reduce((prev, cur) => {
               prev += String.fromCharCode(cur);
               return prev;
             }, "")}
@@ -82,7 +85,7 @@ export const Ram = (props: { memory: Memory; highlightRange?: [number, number] }
           </Tr>
         </Thead>
         <Tbody fontFamily="monospace">
-          {[...Array(props.memory.data.length / 4)].map((x, i) => (
+          {[...Array(memory.data.length / 4)].map((x, i) => (
             <Tr key={i} style={style(i)}>
               <Td>{(i * 4).toString(16).padStart(8, "0")}</Td>
               {formatMem(i)}

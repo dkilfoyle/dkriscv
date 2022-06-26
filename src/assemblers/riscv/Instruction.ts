@@ -138,7 +138,6 @@ const FORMAT_TO_IMM_SLICES = {
 };
 
 function decodeImmediate({ opcode, funct3, rs2 }, format: InstructionType, word: number) {
-  debugger;
   if (opcode === OP_IMM && (funct3 === F3_SL || funct3 === F3_SR)) {
     return rs2;
   }

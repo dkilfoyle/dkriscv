@@ -14,7 +14,7 @@ const codeFile = require("./languages/simpleC/examples/fib.tc");
 const compiler = new ASMGenerator();
 const assembler = new MCGenerator();
 
-const ComputerContext = React.createContext(null);
+export const ComputerContext = React.createContext(new Computer());
 const computer = new Computer();
 
 export const App = () => {
@@ -131,7 +131,7 @@ export const App = () => {
             <ReflexSplitter />
 
             <ReflexElement className="sim-pane">
-              <Schematic computer={computer} incStep={incStep} memoryHighlightRange={memRange}></Schematic>
+              <Schematic incStep={incStep} memoryHighlightRange={memRange}></Schematic>
             </ReflexElement>
           </ReflexContainer>
         </ComputerContext.Provider>

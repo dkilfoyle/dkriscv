@@ -8,22 +8,22 @@ import { Ram } from "./ram";
 import { PC } from "./pc";
 import { Regs } from "./regs";
 
-export const Schematic = (props: { computer: Computer; incStep: () => void; memoryHighlightRange: [number, number] }) => {
+export const Schematic = (props: { incStep: () => void; memoryHighlightRange: [number, number] }) => {
   return (
     <Flex direction="column" height="100vh" gap={4} padding={4}>
       <Box borderRadius="md" borderWidth="1px" width="100%">
-        <IR ir={props.computer.cpu.instr} computer={props.computer} incStep={props.incStep}></IR>
+        <IR incStep={props.incStep}></IR>
       </Box>
       <Flex gap={4} style={{ overflow: "hidden" }}>
         <Box borderRadius="md" borderWidth="1px" style={{ overflow: "auto", width: "250px" }}>
-          <Ram memory={props.computer.mem}></Ram>
+          <Ram></Ram>
         </Box>
         <VStack flex="1">
           <Box borderRadius="md" borderWidth="1px" width="200px">
-            <PC pc={props.computer.cpu.pc}></PC>
+            <PC></PC>
           </Box>
           <Box borderRadius="md" borderWidth="1px" width="200px">
-            <ALU cpu={props.computer.cpu}></ALU>
+            <ALU></ALU>
           </Box>
           <Box borderRadius="md" borderWidth="1px" width="200px">
             <Comparator></Comparator>
@@ -33,7 +33,7 @@ export const Schematic = (props: { computer: Computer; incStep: () => void; memo
           </Box>
         </VStack>
         <Box borderRadius="md" borderWidth="1px" style={{ overflow: "auto" }} width="200px">
-          <Regs cpu={props.computer.cpu}></Regs>
+          <Regs></Regs>
         </Box>
       </Flex>
     </Flex>

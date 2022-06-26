@@ -1,9 +1,10 @@
 import { ArrowForwardIcon, ArrowRightIcon, RepeatIcon } from "@chakra-ui/icons";
-import { Table, TableContainer, Tbody, Th, Thead, Tr, Td, ButtonGroup, Button, Center, HStack, Spacer, IconButton } from "@chakra-ui/react";
-import { useCallback, useEffect, useState } from "react";
-import { Instruction, instructionFields, instructionFormats } from "../../assemblers/riscv/Instruction";
-import { Computer } from "../../simulator/System";
-import { formatHex, unsignedSlice } from "../../utils/bits";
+import { Table, TableContainer, Tbody, Th, Thead, Tr, Td, ButtonGroup, Center, HStack, Spacer, IconButton } from "@chakra-ui/react";
+import { useContext } from "react";
+import { ComputerContext } from "../../App";
+import { instructionFields, instructionFormats } from "../../assemblers/riscv/Instruction";
+import { unsignedSlice } from "../../utils/bits";
+import { useFormat } from "../../utils/useFormat";
 import "./schematic.css";
 
 const colors = {
@@ -14,26 +15,20 @@ const colors = {
   im: "#ddeeff",
 };
 
-export const IR = (props: { ir: Instruction; computer: Computer; incStep: () => void }) => {
-  const [format, setFormat] = useState(10);
-  const formatField = (x: number, length: number) => {
-    switch (format) {
-      case 2:
-        return x.toString(2).padStart(length, "0");
-      case 10:
-        return x.toString(10);
-      case 16:
-        return "0x" + x.toString(16);
-    }
-  };
+export const IR = (props: { incStep: () => void }) => {
+  const computer = useContext(ComputerContext);
+  const ir = computer.cpu.instr;
+
+  const { FormatSelector, formatFn } = useFormat(10);
+
   const row = (type: "name" | "value") => (
     <Tr>
-      {instructionFormats[props.ir.iType].map((field, i) => {
+      {instructionFormats[ir.iType].map((field, i) => {
         const offsets = instructionFields[field];
         const length = offsets[0] - offsets[1] + 1;
         return (
           <Td key={i} colSpan={length} bg={colors[field.substring(0, 2)]}>
-            <Center>{type === "name" ? field : formatField(unsignedSlice(props.ir.machineCode, offsets[0], offsets[1]), length)}</Center>
+            <Center>{type === "name" ? field : formatFn(unsignedSlice(ir.machineCode, offsets[0], offsets[1]), length)}</Center>
           </Td>
         );
       })}
@@ -41,7 +36,7 @@ export const IR = (props: { ir: Instruction; computer: Computer; incStep: () => 
   );
 
   const handleStep = () => {
-    props.computer.step();
+    computer.step();
     props.incStep();
   };
 
@@ -52,16 +47,12 @@ export const IR = (props: { ir: Instruction; computer: Computer; incStep: () => 
           <Tr>
             <Th colSpan={32}>
               <HStack>
-                <span>
-                  IR: {props.ir.iType} Type = 0x{props.ir.machineCode.toString(16)}
-                </span>
-                <Spacer></Spacer>
                 <ButtonGroup size="xs" isAttached variant="outline">
                   <IconButton onClick={handleStep} size="xs" icon={<RepeatIcon />} aria-label={""}></IconButton>
                   <IconButton onClick={handleStep} size="xs" icon={<ArrowForwardIcon />} aria-label={""} />
                   <IconButton
                     onClick={() => {
-                      props.computer.run();
+                      computer.run();
                       // props.setComputer(props.computer);
                     }}
                     size="xs"
@@ -69,18 +60,11 @@ export const IR = (props: { ir: Instruction; computer: Computer; incStep: () => 
                     aria-label={""}
                   />
                 </ButtonGroup>
+                <span>
+                  IR = 0x{ir.machineCode.toString(16)} ({ir.iType})
+                </span>
                 <Spacer></Spacer>
-                <ButtonGroup size="xs" isAttached variant="outline">
-                  <Button onClick={() => setFormat(2)} size="xs">
-                    B
-                  </Button>
-                  <Button onClick={() => setFormat(10)} size="xs">
-                    D
-                  </Button>
-                  <Button onClick={() => setFormat(16)} size="xs">
-                    H
-                  </Button>
-                </ButtonGroup>
+                <FormatSelector />
               </HStack>
             </Th>
           </Tr>

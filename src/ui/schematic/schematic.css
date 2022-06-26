@@ -4,8 +4,25 @@ td.value {
 }
 
 tr.instruction-bits td {
-  border-right: 1px solid lightgrey;
+  border-right: 1px solid rgb(241, 241, 241);
   min-width: 24px;
   font-size: 10pt;
   text-align: center;
+  background-color: lightgrey;
 }
+
+.fade-enter {
+  opacity: 0;
+}
+.fade-enter-active {
+  opacity: 1;
+  transition: opacity 500ms;
+}
+
+/* .fade-exit {
+  opacity: 1;
+}
+.fade-exit-active {
+  opacity: 0;
+  transition: opacity 500ms;
+} */

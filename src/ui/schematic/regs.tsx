@@ -1,7 +1,9 @@
 import { Button, ButtonGroup, HStack, Spacer, Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { ComputerContext } from "../../App";
 import { registerNames } from "../../assemblers/riscv/builder";
 import { Processor } from "../../simulator/Processor";
+import { useFormat } from "../../utils/useFormat";
 
 const regColor = (i) => {
   switch (true) {
@@ -20,8 +22,11 @@ const regColor = (i) => {
   }
 };
 
-export const Regs = (props: { cpu: Processor }) => {
-  const [format, setFormat] = useState(10);
+export const Regs = () => {
+  const { FormatSelector, formatFn } = useFormat(10);
+  const computer = useContext(ComputerContext);
+  const cpu = computer.cpu;
+
   return (
     <TableContainer>
       <Table size="xs">
@@ -30,24 +35,17 @@ export const Regs = (props: { cpu: Processor }) => {
             <Th colSpan={3}>
               <HStack>
                 <span style={{ paddingLeft: "10px" }}>Regs</span> <Spacer></Spacer>
-                <ButtonGroup size="xs" isAttached variant="outline">
-                  <Button onClick={() => setFormat(10)} size="xs">
-                    D
-                  </Button>
-                  <Button onClick={() => setFormat(16)} size="xs">
-                    H
-                  </Button>
-                </ButtonGroup>
+                <FormatSelector />
               </HStack>
             </Th>
           </Tr>
         </Thead>
         <Tbody fontFamily="monospace">
-          {props.cpu.x.map((r, i) => (
+          {cpu.x.map((r, i) => (
             <Tr key={i} style={{ background: regColor(i) }}>
               <td align="right">x{i}</td>
               <td align="center" style={{ minWidth: 50 }}>
-                {format === 10 ? props.cpu.x[i] : "0x" + props.cpu.x[i].toString(16)}
+                {formatFn(cpu.x[i])}
               </td>
               <td align="left">{registerNames[i]}</td>
             </Tr>
