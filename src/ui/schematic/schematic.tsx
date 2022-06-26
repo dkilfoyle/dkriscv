@@ -8,11 +8,11 @@ import { Ram } from "./ram";
 import { PC } from "./pc";
 import { Regs } from "./regs";
 
-export const Schematic = (props: { computer: Computer; memoryHighlightRange: [number, number] }) => {
+export const Schematic = (props: { computer: Computer; incStep: () => void; memoryHighlightRange: [number, number] }) => {
   return (
     <Flex direction="column" height="100vh" gap={4} padding={4}>
       <Box borderRadius="md" borderWidth="1px" width="100%">
-        <IR ir={props.computer.cpu.instr}></IR>
+        <IR ir={props.computer.cpu.instr} computer={props.computer} incStep={props.incStep}></IR>
       </Box>
       <Flex gap={4} style={{ overflow: "hidden" }}>
         <Box borderRadius="md" borderWidth="1px" style={{ overflow: "auto", width: "250px" }}>
@@ -23,7 +23,7 @@ export const Schematic = (props: { computer: Computer; memoryHighlightRange: [nu
             <PC pc={props.computer.cpu.pc}></PC>
           </Box>
           <Box borderRadius="md" borderWidth="1px" width="200px">
-            <ALU></ALU>
+            <ALU cpu={props.computer.cpu}></ALU>
           </Box>
           <Box borderRadius="md" borderWidth="1px" width="200px">
             <Comparator></Comparator>

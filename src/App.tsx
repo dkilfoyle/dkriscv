@@ -1,5 +1,5 @@
 import { Box, ChakraProvider, theme } from "@chakra-ui/react";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ReflexContainer, ReflexElement, ReflexSplitter } from "react-reflex";
 import "react-reflex/styles.css";
 import { ASMRootNode } from "./assemblers/riscv/builder";
@@ -14,6 +14,7 @@ const codeFile = require("./languages/simpleC/examples/fib.tc");
 const compiler = new ASMGenerator();
 const assembler = new MCGenerator();
 
+const ComputerContext = React.createContext(null);
 const computer = new Computer();
 
 export const App = () => {
@@ -109,26 +110,31 @@ export const App = () => {
   //   if (cmAsmRef.current?.state) console.log("state:", cmAsmRef.current.state);
   // }, [asmPos]);
 
+  const [step, setStep] = useState(0);
+  const incStep = () => setStep(step + 1);
+
   return (
     <ChakraProvider theme={theme}>
       <Box fontSize="xl" h="100vh">
-        <ReflexContainer orientation="vertical">
-          <ReflexElement className="c-pane">
-            <CodeEditor code={code} lang="simpleC" updateAst={updateCAst} updatePos={updateCodePos} highlightRange={codeRange}></CodeEditor>
-          </ReflexElement>
+        <ComputerContext.Provider value={computer}>
+          <ReflexContainer orientation="vertical">
+            <ReflexElement className="c-pane">
+              <CodeEditor code={code} lang="simpleC" updateAst={updateCAst} updatePos={updateCodePos} highlightRange={codeRange}></CodeEditor>
+            </ReflexElement>
 
-          <ReflexSplitter />
+            <ReflexSplitter />
 
-          <ReflexElement className="asm-pane">
-            <CodeEditor code={asm} lang="simpleASM" updateAst={updateAsmAst} updatePos={updateAsmPos} highlightRange={asmRange}></CodeEditor>
-          </ReflexElement>
+            <ReflexElement className="asm-pane">
+              <CodeEditor code={asm} lang="simpleASM" updateAst={updateAsmAst} updatePos={updateAsmPos} highlightRange={asmRange}></CodeEditor>
+            </ReflexElement>
 
-          <ReflexSplitter />
+            <ReflexSplitter />
 
-          <ReflexElement className="sim-pane">
-            <Schematic computer={computer} memoryHighlightRange={memRange}></Schematic>
-          </ReflexElement>
-        </ReflexContainer>
+            <ReflexElement className="sim-pane">
+              <Schematic computer={computer} incStep={incStep} memoryHighlightRange={memRange}></Schematic>
+            </ReflexElement>
+          </ReflexContainer>
+        </ComputerContext.Provider>
       </Box>
     </ChakraProvider>
   );

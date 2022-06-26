@@ -3,6 +3,7 @@
 // {             imm[11:0]           } {     rs1    } {  f3  } {      rd    } {      opcode      }   I Type
 // {     imm[11:5]    } {     rs2    } {     rs1    } {  f3  } {  imm[4:0]  } {      opcode      }   S Type
 
+import { assert } from "console";
 import { getBits, maskBits, signedSlice, unsignedSlice } from "../../utils/bits";
 import { SymbolTable } from "./builder";
 
@@ -137,6 +138,7 @@ const FORMAT_TO_IMM_SLICES = {
 };
 
 function decodeImmediate({ opcode, funct3, rs2 }, format: InstructionType, word: number) {
+  debugger;
   if (opcode === OP_IMM && (funct3 === F3_SL || funct3 === F3_SR)) {
     return rs2;
   }
@@ -242,7 +244,7 @@ export class Instruction {
       return (code & ~(mask << lo)) | ((value & mask) << lo);
     };
 
-    const [, opcode, funct3, funct7] = operations[this.opName];
+    const [opcode, funct3, funct7] = operations[this.opName];
 
     let code = 0;
 
@@ -313,9 +315,11 @@ export class Instruction {
     }
 
     const opName = tree as unknown as string;
-    console.log("Decode", x, opName);
+    const format = OPCODE_TO_FORMAT[fields.opcode];
 
-    return new Instruction(tree as unknown as string, { ...fields, imm: decodeImmediate(fields, operations[opName][0], x) }, [0, 0]);
+    const result = new Instruction(opName, { ...fields, imm: decodeImmediate(fields, format, x) }, [0, 0]);
+    result.machineCode = x;
+    return result;
   }
 
   formatMachineCode() {

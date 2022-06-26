@@ -3,6 +3,7 @@
 import { unsignedSlice, signed, unsigned } from "../utils/bits";
 import { Bus } from "./Bus.js";
 import { Instruction } from "../assemblers/riscv/Instruction";
+import { memSize } from "./System";
 
 interface Datapath {
   src1?: "pc" | "x1";
@@ -51,6 +52,7 @@ const ACTION_TABLE: Record<string, Datapath> = {
   sra:    { src1: "x1", src2: "x2",  aluOp: "sra",  wbMem: "r" },
   or:     { src1: "x1", src2: "x2",  aluOp: "or",   wbMem: "r" },
   and:    { src1: "x1", src2: "x2",  aluOp: "and",  wbMem: "r" },
+  nop:    {},
   mret:   {},
   invalid:{},
 };
@@ -68,7 +70,7 @@ export class Processor {
   branchTaken: boolean;
   loadData: number;
   loadStoreError: boolean;
-  state: string;
+  state: "fetch" | "decode" | "compute" | "updatePC" | "compare" | "loadStoreWriteBack";
   instr: Instruction;
   datapath: Datapath;
   irqState: boolean;
@@ -85,10 +87,10 @@ export class Processor {
     for (let i = 0; i < this.x.length; i++) {
       this.x[i] = 0;
     }
-
+    this.x[2] = memSize;
     this.pc = 0;
     this.mepc = 0;
-    this.fetchData = 0x03;
+    this.fetchData = 0x13;
     this.fetchError = false;
     this.decode();
     this.x1 = 0;
@@ -104,11 +106,13 @@ export class Processor {
     this.fetchData = this.bus.read(this.pc, 4, false);
     this.fetchError = this.bus.error;
     this.state = "decode";
+    console.log("Fetch: ", this.fetchData);
   }
 
   decode() {
     this.instr = Instruction.Decode(this.fetchData);
     this.datapath = ACTION_TABLE[this.instr.opName];
+    console.log("Decode: ", this.instr.opName, this.instr.params, this.datapath);
     this.state = this.datapath.aluOp ? "compute" : "updatePC";
   }
 

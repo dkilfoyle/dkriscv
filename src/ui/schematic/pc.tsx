@@ -1,4 +1,4 @@
-import { Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
+import { Table, TableContainer, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
 
 export const PC = (props: { pc: number }) => {
   return (
@@ -12,8 +12,10 @@ export const PC = (props: { pc: number }) => {
         </Thead>
         <Tbody fontFamily="monospace">
           <Tr>
-            <td>pc</td>
-            <td>{props.pc}</td>
+            <td align="center">pc</td>
+            <td align="right" style={{ paddingRight: "20px" }}>
+              {props.pc}
+            </td>
           </Tr>
         </Tbody>
       </Table>

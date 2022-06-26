@@ -1,0 +1,11 @@
+td.value {
+  text-align: right;
+  padding-right: 10px;
+}
+
+tr.instruction-bits td {
+  border-right: 1px solid lightgrey;
+  min-width: 24px;
+  font-size: 10pt;
+  text-align: center;
+}
