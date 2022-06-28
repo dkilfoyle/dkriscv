@@ -9,7 +9,7 @@ import "./schematic.css";
 const duration = 300;
 
 export const PC = () => {
-  const { FormatSelector, formatFn } = useFormat(10);
+  const { FormatSelector, formatFn } = useFormat();
   const computer = useContext(ComputerContext);
 
   const [inProp, setInProp] = useState(false);

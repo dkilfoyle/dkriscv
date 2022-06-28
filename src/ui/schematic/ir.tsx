@@ -8,18 +8,19 @@ import { useFormat } from "../../utils/useFormat";
 import "./schematic.css";
 
 const colors = {
-  fu: "#ffcbdb",
-  rs: "#ddffdd",
+  fun: "#ffcbdb",
+  rs1: "#ddffdd",
+  rs2: "#c2f7c2",
   rd: "#ffb7b7",
-  op: "#fffdd0",
-  im: "#ddeeff",
+  opc: "#fffdd0",
+  imm: "#ddeeff",
 };
 
 export const IR = (props: { incStep: () => void }) => {
   const computer = useContext(ComputerContext);
   const ir = computer.cpu.instr;
 
-  const { FormatSelector, formatFn } = useFormat(10);
+  const { FormatSelector, formatFn } = useFormat();
 
   const row = (type: "name" | "value") => (
     <Tr>
@@ -27,7 +28,7 @@ export const IR = (props: { incStep: () => void }) => {
         const offsets = instructionFields[field];
         const length = offsets[0] - offsets[1] + 1;
         return (
-          <Td key={i} colSpan={length} bg={colors[field.substring(0, 2)]}>
+          <Td key={i} colSpan={length} bg={colors[field.substring(0, 3)]}>
             <Center>{type === "name" ? field : formatFn(unsignedSlice(ir.machineCode, offsets[0], offsets[1]), length)}</Center>
           </Td>
         );
@@ -41,7 +42,18 @@ export const IR = (props: { incStep: () => void }) => {
   };
 
   return (
-    <TableContainer>
+    <TableContainer
+      sx={{
+        "&::-webkit-scrollbar": {
+          height: "6px",
+          borderRadius: "4px",
+          backgroundColor: `rgba(0, 0, 0, 0.05)`,
+        },
+        "&::-webkit-scrollbar-thumb": {
+          borderRadius: "4px",
+          backgroundColor: `rgba(0, 0, 0, 0.05)`,
+        },
+      }}>
       <Table size="xs">
         <Thead>
           <Tr>
@@ -61,7 +73,7 @@ export const IR = (props: { incStep: () => void }) => {
                   />
                 </ButtonGroup>
                 <span>
-                  IR = 0x{ir.machineCode.toString(16)} ({ir.iType})
+                  IR = 0x{(ir.machineCode >>> 0).toString(16)} ({ir.iType})
                 </span>
                 <Spacer></Spacer>
                 <FormatSelector />

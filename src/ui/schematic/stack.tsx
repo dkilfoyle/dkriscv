@@ -4,7 +4,7 @@ import { ComputerContext } from "../../App";
 import { getBytes } from "../../utils/bits";
 import { useFormat } from "../../utils/useFormat";
 
-export const Ram = (props: { highlightRange?: [number, number] }) => {
+export const Stack = (props: { highlightRange?: [number, number] }) => {
   const style = (i) =>
     props.highlightRange && i >= props.highlightRange[0] && i <= props.highlightRange[1] ? { backgroundColor: "#d4fafa" } : {};
 
@@ -68,14 +68,14 @@ export const Ram = (props: { highlightRange?: [number, number] }) => {
       <Table size="sm">
         <Thead>
           <Tr>
-            <Th>Ram</Th>
+            <Th>Stack</Th>
             <Th>
               <FormatSelector />
             </Th>
           </Tr>
         </Thead>
         <Tbody fontFamily="monospace">
-          {[...Array(memory.data.length / 4)].map((x, i) => (
+          {[...Array(memory.data.length / 4).slice(computer.cpu.getX(2) / 4)].map((x, i) => (
             <Tr key={i} style={style(i)}>
               <Td>{(i * 4).toString(16).padStart(8, "0")}</Td>
               {formatMem(i)}

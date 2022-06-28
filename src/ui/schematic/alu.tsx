@@ -5,7 +5,7 @@ import { useFormat } from "../../utils/useFormat";
 import "./schematic.css";
 
 export const ALU = () => {
-  const { FormatSelector, formatFn } = useFormat(10);
+  const { FormatSelector, formatFn } = useFormat();
   const computer = useContext(ComputerContext);
   const cpu = computer.cpu;
   return (

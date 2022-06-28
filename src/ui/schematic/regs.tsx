@@ -5,27 +5,33 @@ import { registerNames } from "../../assemblers/riscv/builder";
 import { Processor } from "../../simulator/Processor";
 import { useFormat } from "../../utils/useFormat";
 
-const regColor = (i) => {
-  switch (true) {
-    case i <= 4:
-      return "#e8e8e8";
-    case i <= 7:
-      return "#f8f8f8";
-    case i <= 10:
-      return "#e8e8e8";
-    case i <= 18:
-      return "#f8f8f8";
-    case i <= 28:
-      return "#e8e8e8";
-    default:
-      return "#f8f8f8";
-  }
-};
-
 export const Regs = () => {
-  const { FormatSelector, formatFn } = useFormat(10);
+  const { FormatSelector, formatFn } = useFormat();
   const computer = useContext(ComputerContext);
   const cpu = computer.cpu;
+
+  const regColor = (i) => {
+    switch (true) {
+      case "RIUJ".includes(cpu.instr.iType) && i === cpu.instr.params.rd:
+        return "#ffb7b7";
+      case "RISB".includes(cpu.instr.iType) && i === cpu.instr.params.rs1:
+        return "#ddffdd";
+      case "RUSB".includes(cpu.instr.iType) && i === cpu.instr.params.rs2:
+        return "#c2f7c2";
+      case i <= 4:
+        return "#e8e8e8";
+      case i <= 7:
+        return "#f8f8f8";
+      case i <= 10:
+        return "#e8e8e8";
+      case i <= 18:
+        return "#f8f8f8";
+      case i <= 28:
+        return "#e8e8e8";
+      default:
+        return "#f8f8f8";
+    }
+  };
 
   return (
     <TableContainer>
