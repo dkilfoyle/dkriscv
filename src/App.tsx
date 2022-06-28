@@ -93,23 +93,6 @@ export const App = () => {
     }
   }, [asmPos, asmMachineCodeRangeMap]);
 
-  // useEffect(() => {
-  //   if (asmPos) {
-  //     console.log(asmPos);
-  //     cmCodeRef.current.view.focus();
-  //     const posMap = positionMap
-  //       .slice()
-  //       .reverse()
-  //       .find((x) => asmPos >= x.asm[0] && asmPos <= x.asm[1]);
-  //     if (posMap) {
-  //       cmCodeRef.current.view.dispatch(cmCodeRef.current.view.state.update({ selection: EditorSelection.cursor(posMap.code[0]) }));
-  //     }
-  //   }
-
-  //   if (cmAsmRef.current?.view) console.log("view:", cmAsmRef.current.view);
-  //   if (cmAsmRef.current?.state) console.log("state:", cmAsmRef.current.state);
-  // }, [asmPos]);
-
   const [step, setStep] = useState(0);
   const incStep = () => setStep(step + 1);
 
