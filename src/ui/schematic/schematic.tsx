@@ -7,6 +7,7 @@ import { Ram } from "./ram";
 import { PC } from "./pc";
 import { Regs } from "./regs";
 import { Stack } from "./stack";
+import { HighlightRange } from "../CodeEditor";
 
 const skinnyScroll = {
   "&::-webkit-scrollbar": {
@@ -20,34 +21,34 @@ const skinnyScroll = {
   },
 };
 
-export const Schematic = (props: { incStep: () => void; memoryHighlightRange: [number, number] }) => {
+export const Schematic = (props: { memoryHighlightRanges: HighlightRange[] }) => {
   return (
     <Flex direction="column" height="100vh" gap={4} padding={4}>
       <Box borderRadius="md" borderWidth="1px" width="100%">
-        <IR incStep={props.incStep}></IR>
+        <IR></IR>
       </Box>
       <Flex gap={4} style={{ overflow: "hidden" }}>
-        <Box bg="#e8f5e9" borderRadius="md" borderWidth="1px" style={{ overflow: "auto", width: "250px" }} sx={skinnyScroll}>
-          <Ram></Ram>
+        <Box bg="#E8F5E9" borderRadius="md" borderWidth="1px" style={{ overflow: "auto", width: "250px" }} sx={skinnyScroll}>
+          <Ram highlightRanges={props.memoryHighlightRanges}></Ram>
         </Box>
         <VStack flex="1">
-          <Box borderRadius="md" borderWidth="1px" width="200px" bg="#e1f5fe">
+          <Box bg="#ede7f6" className="componentBox">
             <PC></PC>
           </Box>
-          <Box borderRadius="md" borderWidth="1px" width="200px" bg="#ede7f6">
+          <Box className="componentBox" bg="#e1f5fe">
             <ALU></ALU>
           </Box>
-          <Box bg="#fbe9e7" borderRadius="md" borderWidth="1px" width="200px">
+          <Box bg="#fbe9e7" className="componentBox">
             <Comparator></Comparator>
           </Box>
-          <Box bg="#fff8e1" borderRadius="md" borderWidth="1px" width="200px">
+          <Box bg="#fff8e1" className="componentBox">
             <Bus></Bus>
           </Box>
-          <Box bg="#e8f5e9" borderRadius="md" borderWidth="1px" width="200px" style={{ overflow: "auto", width: "250px" }} sx={skinnyScroll}>
+          <Box bg="#e8f5e9" className="componentBox" sx={skinnyScroll}>
             <Stack></Stack>
           </Box>
         </VStack>
-        <Box borderRadius="md" borderWidth="1px" style={{ overflow: "auto" }} width="200px" sx={skinnyScroll}>
+        <Box className="regBox" sx={skinnyScroll}>
           <Regs></Regs>
         </Box>
       </Flex>

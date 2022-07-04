@@ -26,3 +26,42 @@ tr.instruction-bits td {
   opacity: 0;
   transition: opacity 500ms;
 } */
+
+.componentBox {
+  width: 100%;
+  max-width: 230px;
+  border-radius: 5px;
+  border-width: 1px;
+}
+
+.componentBox td:first-child {
+  width: 100px;
+  text-align: center;
+}
+
+.componentBox td:last-child {
+  width: 100px;
+  text-align: right;
+  padding-right: 20px;
+}
+
+.regBox {
+  border-radius: 5px;
+  border-width: 1px;
+  overflow: auto;
+  min-width: 220px;
+}
+
+.regBox td:first-child {
+  text-align: right;
+  width: 50px;
+}
+
+.regBox td:nth-child(2) {
+  text-align: center;
+  width: 100px;
+}
+
+.regBox td:last-child {
+  text-align: left;
+}

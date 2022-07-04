@@ -60,6 +60,7 @@ const ACTION_TABLE: Record<string, Datapath> = {
 export class Processor {
   x: number[];
   pc: number;
+  pcLast: number;
   mepc: number;
   bus: Bus;
   fetchData: number;
@@ -89,6 +90,7 @@ export class Processor {
     }
     this.x[2] = memSize;
     this.pc = 0;
+    this.pcLast = 0;
     this.mepc = 0;
     this.fetchData = 0x13;
     this.fetchError = false;
@@ -268,6 +270,7 @@ export class Processor {
   }
 
   updatePC() {
+    this.pcLast = this.pc;
     this.acceptingIrq = this.bus.irq() && !this.irqState;
     if (this.acceptingIrq) {
       this.mepc = this.branchTaken ? this.aluResult : this.pcNext;

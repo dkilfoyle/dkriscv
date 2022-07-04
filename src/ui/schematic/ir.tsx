@@ -16,8 +16,8 @@ const colors = {
   imm: "#ddeeff",
 };
 
-export const IR = (props: { incStep: () => void }) => {
-  const computer = useContext(ComputerContext);
+export const IR = () => {
+  const { computer, render } = useContext(ComputerContext);
   const ir = computer.cpu.instr;
 
   const { FormatSelector, formatFn } = useFormat();
@@ -38,7 +38,7 @@ export const IR = (props: { incStep: () => void }) => {
 
   const handleStep = () => {
     computer.step();
-    props.incStep();
+    render();
   };
 
   return (

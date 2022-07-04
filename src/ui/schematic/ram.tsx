@@ -1,14 +1,23 @@
-import { Table, TableContainer, Td, Th, Tr, Tbody, Thead, Button, HStack, ButtonGroup } from "@chakra-ui/react";
-import { useContext, useState } from "react";
+import { Table, TableContainer, Td, Th, Tr, Tbody, Thead, HStack } from "@chakra-ui/react";
+import { useContext } from "react";
 import { ComputerContext } from "../../App";
 import { getBytes } from "../../utils/bits";
 import { useFormat } from "../../utils/useFormat";
+import { HighlightRange } from "../CodeEditor";
 
-export const Ram = (props: { highlightRange?: [number, number] }) => {
-  const style = (i) =>
-    props.highlightRange && i >= props.highlightRange[0] && i <= props.highlightRange[1] ? { backgroundColor: "#d4fafa" } : {};
+export const Ram = (props: { highlightRanges?: HighlightRange[] }) => {
+  const style = (i) => {
+    if (i * 4 === computer.cpu.pcLast) return { background: "#A5D6A7" };
+    if (props.highlightRanges) {
+      for (let { startPos, endPos, col } of props.highlightRanges) {
+        if (i >= startPos && i <= endPos) return { backgroundColor: col };
+      }
+    }
 
-  const computer = useContext(ComputerContext);
+    return {};
+  };
+
+  const { computer } = useContext(ComputerContext);
   const memory = computer.mem;
 
   // const [memFormat, setMemFormat] = useState("bytes");

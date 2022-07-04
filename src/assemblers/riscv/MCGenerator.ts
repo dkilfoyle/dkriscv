@@ -20,14 +20,17 @@ export class MCGenerator {
 
     this.instructions.forEach((ins, i) => {
       ins.encode(i, this.symbols);
-      this.rangeMap.push({ left: ins.pos, right: [i, i] });
+      this.rangeMap.push({ left: { startPos: ins.pos[0], endPos: ins.pos[1], col: "red" }, right: { startPos: i, endPos: i, col: "blue" } });
     });
 
     Object.keys(this.symbols).forEach((symName, i) => {
       const instNum = this.symbols[symName] / 4;
       if (instNum < this.instructions.length) {
         const inst = this.instructions[instNum];
-        this.rangeMap.push({ left: inst.pos, right: [instNum, instNum] });
+        this.rangeMap.push({
+          left: { startPos: inst.pos[0], endPos: inst.pos[1], col: "red" },
+          right: { startPos: i, endPos: i, col: "blue" },
+        });
       }
     });
 

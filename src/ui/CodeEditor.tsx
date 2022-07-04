@@ -17,9 +17,11 @@ import { RangeSetBuilder } from "@codemirror/state";
 
 import { ViewPlugin, DecorationSet, ViewUpdate } from "@codemirror/view";
 
+export type HighlightRange = { startPos: number; endPos: number; col: string };
+
 export interface RangeMapEntry {
-  left: [number, number];
-  right: [number, number];
+  left: HighlightRange;
+  right: HighlightRange;
 }
 export type RangeMap = RangeMapEntry[];
 
@@ -33,7 +35,7 @@ let lexer: Lexer, parser: SimpleCParser | SimpleASMParser, builder: SimpleASMAst
 export const CodeEditor = (props: {
   lang: string;
   code: string;
-  highlightRange: [number, number];
+  highlightRanges: HighlightRange[];
   updateAst: (root: ASMRootNode | AstNode) => void;
   updatePos: (pos: number) => void;
 }) => {
@@ -81,15 +83,20 @@ export const CodeEditor = (props: {
   });
 
   function rangeDeco(view: EditorView) {
-    const stripe = Decoration.line({
-      attributes: { class: "cm-zebraStripe" },
-    });
+    const stripe = (col) =>
+      // Decoration.line({ style: `background: ${col}` });
+      Decoration.line({ class: "cm-zebraStripe" });
     let builder = new RangeSetBuilder<Decoration>();
-    if (props.highlightRange)
+    if (props.highlightRanges.length)
       for (let { from, to } of view.visibleRanges) {
         for (let pos = from; pos <= to; ) {
           let line = view.state.doc.lineAt(pos);
-          if (pos >= props.highlightRange[0] && pos <= props.highlightRange[1]) builder.add(line.from, line.from, stripe);
+          for (let { startPos, endPos, col } of props.highlightRanges) {
+            let highlightStartLine = view.state.doc.lineAt(startPos).number;
+            let highlightEndLine = view.state.doc.lineAt(endPos).number;
+            // if (pos >= startPos && pos <= endPos) builder.add(line.from, line.from, stripe(col));
+            if (line.number >= highlightStartLine && line.number <= highlightEndLine) builder.add(line.from, line.from, stripe(col));
+          }
           pos = line.to + 1;
         }
       }

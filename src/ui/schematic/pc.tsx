@@ -9,8 +9,8 @@ import "./schematic.css";
 const duration = 300;
 
 export const PC = () => {
-  const { FormatSelector, formatFn } = useFormat();
-  const computer = useContext(ComputerContext);
+  const { FormatSelector, formatFn } = useFormat("H");
+  const { computer } = useContext(ComputerContext);
 
   const [inProp, setInProp] = useState(false);
   useEffect(() => {
@@ -22,7 +22,7 @@ export const PC = () => {
       <Table size="xs">
         <Thead>
           <Tr>
-            <Th colSpan={2}>
+            <Th colSpan={3}>
               <HStack>
                 <span style={{ paddingLeft: "10px" }}>PC</span> <Spacer></Spacer>
                 <FormatSelector />
@@ -32,7 +32,17 @@ export const PC = () => {
         </Thead>
         <Tbody fontFamily="monospace">
           <Tr>
+            <td>pcCur</td>
+            <td></td>
+            <td>
+              <CSSTransition in={inProp} timeout={duration} classNames="fade" onEntered={() => setInProp(false)}>
+                <span>{formatFn(computer.cpu.pcLast)}</span>
+              </CSSTransition>
+            </td>
+          </Tr>
+          <Tr>
             <td align="center">pc</td>
+            <td width="50px"></td>
             <td align="right" style={{ paddingRight: "20px" }}>
               <CSSTransition in={inProp} timeout={duration} classNames="fade" onEntered={() => setInProp(false)}>
                 <span>{formatFn(computer.cpu.pc)}</span>

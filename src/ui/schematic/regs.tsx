@@ -7,7 +7,7 @@ import { useFormat } from "../../utils/useFormat";
 
 export const Regs = () => {
   const { FormatSelector, formatFn } = useFormat();
-  const computer = useContext(ComputerContext);
+  const { computer } = useContext(ComputerContext);
   const cpu = computer.cpu;
 
   const regColor = (i) => {
@@ -22,11 +22,11 @@ export const Regs = () => {
         return "#e8e8e8";
       case i <= 7:
         return "#f8f8f8";
-      case i <= 10:
+      case i <= 9:
         return "#e8e8e8";
-      case i <= 18:
+      case i <= 17:
         return "#f8f8f8";
-      case i <= 28:
+      case i <= 27:
         return "#e8e8e8";
       default:
         return "#f8f8f8";
@@ -49,11 +49,9 @@ export const Regs = () => {
         <Tbody fontFamily="monospace">
           {cpu.x.map((r, i) => (
             <Tr key={i} style={{ background: regColor(i) }}>
-              <td align="right">x{i}</td>
-              <td align="center" style={{ minWidth: 50 }}>
-                {formatFn(cpu.x[i])}
-              </td>
-              <td align="left">{registerNames[i]}</td>
+              <td>x{i}</td>
+              <td>{formatFn(cpu.x[i])}</td>
+              <td>{registerNames[i]}</td>
             </Tr>
           ))}
         </Tbody>

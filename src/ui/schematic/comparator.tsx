@@ -15,7 +15,7 @@ const BRANCH_TO_OP = {
 
 export const Comparator = (props) => {
   const { FormatSelector, formatFn } = useFormat();
-  const computer = useContext(ComputerContext);
+  const { computer } = useContext(ComputerContext);
   const branch = computer.cpu.datapath.branch;
 
   return (
@@ -34,23 +34,24 @@ export const Comparator = (props) => {
         </Thead>
         <Tbody fontFamily="monospace">
           <Tr>
-            <td align="center">op</td>
+            <td>op</td>
             <td></td>
-            <td className="value">{branch ? BRANCH_TO_OP[branch] : ""}</td>
+            <td className="value">{branch ? BRANCH_TO_OP[branch] : "-"}</td>
           </Tr>
           <Tr>
-            <td align="center">a</td>
-            <td align="center">{branch ? "x" + computer.cpu.instr.params.rs1 : ""}</td>
-            <td className="value">{branch ? formatFn(computer.cpu.x1) : ""}</td>
+            <td>a</td>
+            <td>{branch ? "x" + computer.cpu.instr.params.rs1 : ""}</td>
+            <td className="value">{branch ? formatFn(computer.cpu.x1) : "-"}</td>
           </Tr>
           <Tr>
-            <td align="center">b</td>
-            <td align="center">{branch ? "x" + computer.cpu.instr.params.rs2 : ""}</td>
-            <td className="value">{branch ? formatFn(computer.cpu.x2) : ""}</td>
+            <td>b</td>
+            <td>{branch ? "x" + computer.cpu.instr.params.rs2 : ""}</td>
+            <td className="value">{branch ? formatFn(computer.cpu.x2) : "-"}</td>
           </Tr>
           <Tr>
-            <td align="center">taken</td>
-            <td className="value">{branch ? computer.cpu.branchTaken.toString() : ""}</td>
+            <td>taken</td>
+            <td></td>
+            <td className="value">{branch ? computer.cpu.branchTaken.toString() : "-"}</td>
           </Tr>
         </Tbody>
       </Table>

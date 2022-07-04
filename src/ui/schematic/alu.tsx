@@ -6,7 +6,7 @@ import "./schematic.css";
 
 export const ALU = () => {
   const { FormatSelector, formatFn } = useFormat();
-  const computer = useContext(ComputerContext);
+  const { computer } = useContext(ComputerContext);
   const cpu = computer.cpu;
   return (
     <TableContainer>
@@ -23,22 +23,22 @@ export const ALU = () => {
         </Thead>
         <Tbody fontFamily="monospace">
           <Tr>
-            <td align="center">op</td>
-            <td align="right">{cpu.datapath.aluOp}</td>
+            <td>op</td>
+            <td>{cpu.datapath.aluOp}</td>
             <td></td>
           </Tr>
           <Tr>
-            <td align="center">a</td>
-            <td align="right">{cpu.datapath.src1 === "x1" ? "x" + cpu.instr.params.rs1 : "pc"}</td>
+            <td>a</td>
+            <td>{cpu.datapath.src1 === "x1" ? "x" + cpu.instr.params.rs1 : "pc"}</td>
             <td className="value">{cpu.datapath.src1 === "x1" ? formatFn(cpu.x1) : formatFn(cpu.pc)}</td>
           </Tr>
           <Tr>
-            <td align="center">b</td>
-            <td align="right">{cpu.datapath.src2 === "x2" ? "x" + cpu.instr.params.rs2 : "imm"}</td>
+            <td>b</td>
+            <td>{cpu.datapath.src2 === "x2" ? "x" + cpu.instr.params.rs2 : "imm"}</td>
             <td className="value">{cpu.datapath.src2 === "x2" ? formatFn(cpu.x2) : formatFn(cpu.instr.params.imm)}</td>
           </Tr>
           <Tr>
-            <td align="center">r</td>
+            <td>r</td>
             <td></td>
             <td className="value">{formatFn(cpu.aluResult)}</td>
           </Tr>

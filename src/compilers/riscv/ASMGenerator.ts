@@ -220,7 +220,10 @@ export class ASMGenerator {
 
     this.emitter.emitJR(R.RA, "jump back to caller (RA)");
 
-    this.rangeMap.push({ left: node.pos, right: [asmStart, this.emitter.out.length] });
+    this.rangeMap.push({
+      left: { startPos: node.pos[0], endPos: node.pos[1], col: "#d4fafa" },
+      right: { startPos: asmStart, endPos: this.emitter.out.length, col: "#d4fafa" },
+    });
   }
 
   // =================================================================================================================

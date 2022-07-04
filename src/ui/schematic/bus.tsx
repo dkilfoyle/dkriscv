@@ -4,14 +4,14 @@ import { ComputerContext } from "../../App";
 import { useFormat } from "../../utils/useFormat";
 
 export const Bus = (props) => {
-  const { FormatSelector, formatFn } = useFormat();
-  const computer = useContext(ComputerContext);
+  const { FormatSelector, formatFn } = useFormat("H");
+  const { computer } = useContext(ComputerContext);
   return (
     <TableContainer>
       <Table size="xs">
         <Thead>
           <Tr>
-            <Th colSpan={2}>
+            <Th colSpan={3}>
               <HStack>
                 <span style={{ paddingLeft: 10 }}>Bus</span>
                 <Spacer></Spacer>
@@ -22,11 +22,13 @@ export const Bus = (props) => {
         </Thead>
         <Tbody fontFamily="monospace">
           <Tr>
-            <td align="center">addr</td>
+            <td>addr</td>
+            <td></td>
             <td className="value">{formatFn(computer.bus.lastAddress)}</td>
           </Tr>
           <Tr>
-            <td align="center">data</td>
+            <td>data</td>
+            <td></td>
             <td className="value">{formatFn(computer.cpu.loadData)}</td>
           </Tr>
         </Tbody>

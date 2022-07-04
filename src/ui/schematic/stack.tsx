@@ -1,14 +1,17 @@
 import { Table, TableContainer, Td, Th, Tr, Tbody, Thead, Button, HStack, ButtonGroup } from "@chakra-ui/react";
 import { useContext, useState } from "react";
 import { ComputerContext } from "../../App";
+import { memSize } from "../../simulator/System";
 import { getBytes } from "../../utils/bits";
 import { useFormat } from "../../utils/useFormat";
 
 export const Stack = (props: { highlightRange?: [number, number] }) => {
-  const style = (i) =>
-    props.highlightRange && i >= props.highlightRange[0] && i <= props.highlightRange[1] ? { backgroundColor: "#d4fafa" } : {};
+  const style = (i) => {
+    if (i === computer.cpu.getX(8)) return { backgroundColor: "#A5D6A7" };
+    return props.highlightRange && i >= props.highlightRange[0] && i <= props.highlightRange[1] ? { backgroundColor: "#d4fafa" } : {};
+  };
 
-  const computer = useContext(ComputerContext);
+  const { computer } = useContext(ComputerContext);
   const memory = computer.mem;
 
   // const [memFormat, setMemFormat] = useState("bytes");
@@ -63,6 +66,9 @@ export const Stack = (props: { highlightRange?: [number, number] }) => {
     }
   };
 
+  const stackSizeWords = (memSize - computer.cpu.getX(2)) / 4;
+  const stackAddresses = [...Array(stackSizeWords)].map((_, i) => memSize - i * 4);
+
   return (
     <TableContainer>
       <Table size="sm">
@@ -75,10 +81,10 @@ export const Stack = (props: { highlightRange?: [number, number] }) => {
           </Tr>
         </Thead>
         <Tbody fontFamily="monospace">
-          {[...Array(memory.data.length / 4).slice(computer.cpu.getX(2) / 4)].map((x, i) => (
-            <Tr key={i} style={style(i)}>
-              <Td>{(i * 4).toString(16).padStart(8, "0")}</Td>
-              {formatMem(i)}
+          {stackAddresses.map((addr) => (
+            <Tr key={addr} style={style(addr)}>
+              <Td>{addr.toString(16).padStart(8, "0")}</Td>
+              {formatMem(addr)}
             </Tr>
           ))}
         </Tbody>
