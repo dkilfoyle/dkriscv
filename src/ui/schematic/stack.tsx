@@ -66,7 +66,7 @@ export const Stack = (props: { highlightRange?: [number, number] }) => {
     }
   };
 
-  const stackSizeWords = (memSize - computer.cpu.getX(2)) / 4;
+  const stackSizeWords = (memSize - computer.cpu.getX(2)) / 4 + 1;
   const stackAddresses = [...Array(stackSizeWords)].map((_, i) => memSize - i * 4);
 
   return (

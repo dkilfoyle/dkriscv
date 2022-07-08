@@ -13,7 +13,7 @@ export const Bus = (props) => {
           <Tr>
             <Th colSpan={3}>
               <HStack>
-                <span style={{ paddingLeft: 10 }}>Bus</span>
+                <span>Bus</span>
                 <Spacer></Spacer>
                 <FormatSelector />
               </HStack>

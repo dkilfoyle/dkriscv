@@ -22,9 +22,9 @@ export const PC = () => {
       <Table size="xs">
         <Thead>
           <Tr>
-            <Th colSpan={3}>
+            <Th colSpan={2}>
               <HStack>
-                <span style={{ paddingLeft: "10px" }}>PC</span> <Spacer></Spacer>
+                <span>PC</span> <Spacer></Spacer>
                 <FormatSelector />
               </HStack>
             </Th>
@@ -33,7 +33,6 @@ export const PC = () => {
         <Tbody fontFamily="monospace">
           <Tr>
             <td>pcCur</td>
-            <td></td>
             <td>
               <CSSTransition in={inProp} timeout={duration} classNames="fade" onEntered={() => setInProp(false)}>
                 <span>{formatFn(computer.cpu.pcLast)}</span>
@@ -42,8 +41,7 @@ export const PC = () => {
           </Tr>
           <Tr>
             <td align="center">pc</td>
-            <td width="50px"></td>
-            <td align="right" style={{ paddingRight: "20px" }}>
+            <td align="right">
               <CSSTransition in={inProp} timeout={duration} classNames="fade" onEntered={() => setInProp(false)}>
                 <span>{formatFn(computer.cpu.pc)}</span>
               </CSSTransition>

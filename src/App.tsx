@@ -11,6 +11,8 @@ import { Schematic } from "./ui/schematic/schematic";
 import { Computer } from "./simulator/System";
 import { Instruction } from "./assemblers/riscv/Instruction";
 
+import "./app.css";
+
 const codeFile = require("./languages/simpleC/examples/fib.tc");
 const compiler = new ASMGenerator();
 const assembler = new MCGenerator();

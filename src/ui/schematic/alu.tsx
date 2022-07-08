@@ -15,7 +15,7 @@ export const ALU = () => {
           <Tr>
             <Th colSpan={3}>
               <HStack>
-                <span style={{ paddingLeft: "10px" }}>ALU</span> <Spacer></Spacer>
+                <span>ALU</span> <Spacer></Spacer>
                 <FormatSelector />
               </HStack>
             </Th>

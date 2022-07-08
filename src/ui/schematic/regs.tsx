@@ -1,4 +1,4 @@
-import { Button, ButtonGroup, HStack, Spacer, Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
+import { Button, ButtonGroup, HStack, Spacer, Table, TableContainer, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
 import { useContext, useState } from "react";
 import { ComputerContext } from "../../App";
 import { registerNames } from "../../assemblers/riscv/builder";
@@ -34,13 +34,13 @@ export const Regs = () => {
   };
 
   return (
-    <TableContainer>
-      <Table size="xs">
+    <TableContainer className="regTable">
+      <Table size="sm">
         <Thead>
           <Tr>
             <Th colSpan={3}>
               <HStack>
-                <span style={{ paddingLeft: "10px" }}>Regs</span> <Spacer></Spacer>
+                <span>Regs</span> <Spacer></Spacer>
                 <FormatSelector />
               </HStack>
             </Th>
@@ -49,9 +49,9 @@ export const Regs = () => {
         <Tbody fontFamily="monospace">
           {cpu.x.map((r, i) => (
             <Tr key={i} style={{ background: regColor(i) }}>
-              <td>x{i}</td>
-              <td>{formatFn(cpu.x[i])}</td>
-              <td>{registerNames[i]}</td>
+              <Td>x{i}</Td>
+              <Td>{formatFn(cpu.x[i])}</Td>
+              <Td>{registerNames[i]}</Td>
             </Tr>
           ))}
         </Tbody>

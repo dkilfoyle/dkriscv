@@ -73,7 +73,7 @@ export const Ram = (props: { highlightRanges?: HighlightRange[] }) => {
   };
 
   return (
-    <TableContainer>
+    <TableContainer className="ramTable">
       <Table size="sm">
         <Thead>
           <Tr>

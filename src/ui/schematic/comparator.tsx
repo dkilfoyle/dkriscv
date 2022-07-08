@@ -25,7 +25,7 @@ export const Comparator = (props) => {
           <Tr>
             <Th colSpan={3}>
               <HStack>
-                <span style={{ paddingLeft: 10 }}>Comp</span>
+                <span>Comp</span>
                 <Spacer></Spacer>
                 <FormatSelector />
               </HStack>

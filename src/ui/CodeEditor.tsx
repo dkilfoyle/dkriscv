@@ -127,7 +127,6 @@ export const CodeEditor = (props: {
     <CodeMirror
       ref={cmCodeRef}
       value={props.code}
-      height="100%"
       extensions={[lintCode, lintGutter(), simpleC(), rangeHighlighter, baseTheme]}
       onChange={(value, viewUpdate) => {
         setCodeChanged(true);

@@ -28,7 +28,7 @@ export const IR = () => {
         const offsets = instructionFields[field];
         const length = offsets[0] - offsets[1] + 1;
         return (
-          <Td key={i} colSpan={length} bg={colors[field.substring(0, 3)]}>
+          <Td key={i} colSpan={length} bg={colors[field.substring(0, 3)]} className={type}>
             <Center>{type === "name" ? field : formatFn(unsignedSlice(ir.machineCode, offsets[0], offsets[1]), length)}</Center>
           </Td>
         );
@@ -42,22 +42,11 @@ export const IR = () => {
   };
 
   return (
-    <TableContainer
-      sx={{
-        "&::-webkit-scrollbar": {
-          height: "6px",
-          borderRadius: "4px",
-          backgroundColor: `rgba(0, 0, 0, 0.05)`,
-        },
-        "&::-webkit-scrollbar-thumb": {
-          borderRadius: "4px",
-          backgroundColor: `rgba(0, 0, 0, 0.05)`,
-        },
-      }}>
+    <TableContainer>
       <Table size="xs">
         <Thead>
           <Tr>
-            <Th colSpan={32}>
+            <Th colSpan={32} paddingLeft={"10px"} paddingRight={"10px"}>
               <HStack>
                 <ButtonGroup size="xs" isAttached variant="outline">
                   <IconButton onClick={handleStep} size="xs" icon={<RepeatIcon />} aria-label={""}></IconButton>
