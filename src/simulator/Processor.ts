@@ -52,6 +52,7 @@ const ACTION_TABLE: Record<string, Datapath> = {
   sra:    { src1: "x1", src2: "x2",  aluOp: "sra",  wbMem: "r" },
   or:     { src1: "x1", src2: "x2",  aluOp: "or",   wbMem: "r" },
   and:    { src1: "x1", src2: "x2",  aluOp: "and",  wbMem: "r" },
+  ecall:  {},
   nop:    {},
   mret:   {},
   invalid:{},
@@ -71,7 +72,7 @@ export class Processor {
   branchTaken: boolean;
   loadData: number;
   loadStoreError: boolean;
-  state: "fetch" | "decode" | "compute" | "updatePC" | "compare" | "loadStoreWriteBack";
+  state: "fetch" | "decode" | "compute" | "updatePC" | "compare" | "loadStoreWriteBack" | "ecall";
   instr: Instruction;
   datapath: Datapath;
   irqState: boolean;
@@ -116,6 +117,21 @@ export class Processor {
     this.datapath = ACTION_TABLE[this.instr.opName];
     console.log("Decode: ", this.instr.opName, this.instr.params, this.datapath);
     this.state = this.datapath.aluOp ? "compute" : "updatePC";
+
+    if (this.instr.opName === "ecall") {
+      this.state = "ecall";
+    }
+  }
+
+  ecall() {
+    const addr = this.getX(11); // a1
+    const etype = this.getX(10); // a0
+    if (etype == 4) {
+      console.log("ecall printstring: ", this.bus.read(addr, 4, false));
+    } else if (etype == 1) {
+      console.log("ecall print_int: ", addr);
+    }
+    this.state = "updatePC";
   }
 
   compute() {
@@ -187,7 +203,10 @@ export class Processor {
 
     if (this.datapath.branch && this.datapath.branch !== "al") {
       this.state = "compare";
-    } else if ((this.datapath.wbMem !== "r" && this.datapath.wbMem !== "pc+") || this.instr.params.rd) {
+    } else if (
+      (this.datapath.wbMem !== "r" && this.datapath.wbMem !== "pc+") ||
+      this.instr.params.rd
+    ) {
       this.state = "loadStoreWriteBack";
     } else {
       this.state = "updatePC";
@@ -261,7 +280,10 @@ export class Processor {
         break;
     }
 
-    this.loadStoreError = this.datapath.wbMem && (this.datapath.wbMem[0] === "l" || this.datapath.wbMem[0] === "s") && this.bus.error;
+    this.loadStoreError =
+      this.datapath.wbMem &&
+      (this.datapath.wbMem[0] === "l" || this.datapath.wbMem[0] === "s") &&
+      this.bus.error;
     this.state = "updatePC";
   }
 

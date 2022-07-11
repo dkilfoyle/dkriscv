@@ -116,8 +116,8 @@ const pseudos = {
 export type SymbolTable = { [index: string]: number };
 
 export class DataSection {
-  data: Uint8Array;
-  pointer: number;
+  data!: Uint8Array;
+  pointer!: number;
   constructor() {
     this.reset();
   }
@@ -147,12 +147,15 @@ export interface ASMRootNode {
   dataSection: DataSection;
 }
 
-export class SimpleASMAstBuilder extends AbstractParseTreeVisitor<ASMRootNode> implements SimpleASMVisitor<void> {
+export class SimpleASMAstBuilder
+  extends AbstractParseTreeVisitor<ASMRootNode>
+  implements SimpleASMVisitor<void>
+{
   // textBytes: ArrayBuffer;
   // textView: DataView;
-  instructions: Instruction[];
-  symbols: SymbolTable;
-  dataSection: DataSection;
+  instructions!: Instruction[];
+  symbols!: SymbolTable;
+  dataSection!: DataSection;
 
   constructor() {
     super();
@@ -173,7 +176,11 @@ export class SimpleASMAstBuilder extends AbstractParseTreeVisitor<ASMRootNode> i
 
   visit(tree: ParseTree): ASMRootNode {
     tree.accept(this);
-    return { instructions: this.instructions, dataSection: this.dataSection, symbols: this.symbols };
+    return {
+      instructions: this.instructions,
+      dataSection: this.dataSection,
+      symbols: this.symbols,
+    };
   }
 
   visitLabel(ctx: LabelContext) {
@@ -262,18 +269,28 @@ export class SimpleASMAstBuilder extends AbstractParseTreeVisitor<ASMRootNode> i
     const symbol = ctx._symbol ? ctx._symbol.text : undefined;
 
     if (op === "la") {
-      this.instructions.push(new Instruction("auipc", { rd, symbol, macro: "hi" }, this.getPos(ctx)));
-      this.instructions.push(new Instruction("addi", { rd, rs1: rd, symbol, macro: "lo" }, this.getPos(ctx)));
+      this.instructions.push(
+        new Instruction("auipc", { rd, symbol, macro: "hi" }, this.getPos(ctx))
+      );
+      this.instructions.push(
+        new Instruction("addi", { rd, rs1: rd, symbol, macro: "lo" }, this.getPos(ctx))
+      );
       return;
     }
 
     if (op === "li" && imm > 0b111111111111) {
-      this.instructions.push(new Instruction("lui", { rd, imm: getBits(imm, 31, 12) }, this.getPos(ctx)));
-      this.instructions.push(new Instruction("addi", { rd, rs1: rd, imm: getBits(imm, 11, 0) }, this.getPos(ctx)));
+      this.instructions.push(
+        new Instruction("lui", { rd, imm: getBits(imm, 31, 12) }, this.getPos(ctx))
+      );
+      this.instructions.push(
+        new Instruction("addi", { rd, rs1: rd, imm: getBits(imm, 11, 0) }, this.getPos(ctx))
+      );
       return;
     }
 
     const rop = pseudos[op];
-    this.instructions.push(new Instruction(rop.name, { ...{ rs1, rs2, rd, imm, offset }, ...rop }, this.getPos(ctx)));
+    this.instructions.push(
+      new Instruction(rop.name, { ...{ rs1, rs2, rd, imm, offset }, ...rop }, this.getPos(ctx))
+    );
   }
 }

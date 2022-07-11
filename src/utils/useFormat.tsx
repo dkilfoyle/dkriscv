@@ -7,7 +7,11 @@ export const useFormat = (x: string = "D", formats = "DH") => {
   const FormatSelector: () => ReactElement<any, any> = () => (
     <ButtonGroup size="xs" isAttached>
       {formats.split("").map((f) => (
-        <Button bg={format === f ? "gray.300" : "gray.100"} onClick={() => setFormat(f)} size="xs">
+        <Button
+          key={f}
+          bg={format === f ? "gray.300" : "gray.100"}
+          onClick={() => setFormat(f)}
+          size="xs">
           {f}
         </Button>
       ))}

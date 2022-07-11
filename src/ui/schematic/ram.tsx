@@ -3,13 +3,13 @@ import { useContext } from "react";
 import { ComputerContext } from "../../App";
 import { getBytes } from "../../utils/bits";
 import { useFormat } from "../../utils/useFormat";
-import { HighlightRange } from "../CodeEditor";
+import { CodeHighlightInfo } from "../CodeEditor";
 
-export const Ram = (props: { highlightRanges?: HighlightRange[] }) => {
+export const Ram = (props: { highlightRanges?: CodeHighlightInfo }) => {
   const style = (i) => {
     if (i * 4 === computer.cpu.pcLast) return { background: "#A5D6A7" };
-    if (props.highlightRanges) {
-      for (let { startPos, endPos, col } of props.highlightRanges) {
+    if (props.highlightRanges.code) {
+      for (let { startPos, endPos, col } of props.highlightRanges.code) {
         if (i >= startPos && i <= endPos) return { backgroundColor: col };
       }
     }

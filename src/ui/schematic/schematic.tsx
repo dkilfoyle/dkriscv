@@ -7,16 +7,21 @@ import { Ram } from "./ram";
 import { PC } from "./pc";
 import { Regs } from "./regs";
 import { Stack } from "./stack";
-import { HighlightRange } from "../CodeEditor";
+import { CodeHighlightInfo, HighlightRange } from "../CodeEditor";
 
-export const Schematic = (props: { memoryHighlightRanges: HighlightRange[] }) => {
+export const Schematic = (props: { memoryHighlightRanges: CodeHighlightInfo }) => {
   return (
     <Flex direction="column" height="100vh" gap={4} padding={4} className="schematic">
       <Box className="irBox">
         <IR></IR>
       </Box>
       <Flex gap={4} style={{ overflow: "hidden" }}>
-        <Box flex="0 0 auto" bg="#E8F5E9" borderRadius="md" borderWidth="1px" style={{ overflow: "auto", width: "220px" }}>
+        <Box
+          flex="0 0 auto"
+          bg="#E8F5E9"
+          borderRadius="md"
+          borderWidth="1px"
+          style={{ overflow: "auto", width: "220px" }}>
           <Ram highlightRanges={props.memoryHighlightRanges}></Ram>
         </Box>
         <VStack flex="1 1 auto" style={{ overflow: "hidden" }}>

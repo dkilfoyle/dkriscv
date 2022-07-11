@@ -3,7 +3,13 @@ import React, { useCallback, useEffect, useReducer, useState } from "react";
 import { ReflexContainer, ReflexElement, ReflexSplitter } from "react-reflex";
 import "react-reflex/styles.css";
 import { ASMRootNode } from "./assemblers/riscv/builder";
-import { CodeEditor, HighlightRange, RangeMap, RangeMapEntry } from "./ui/CodeEditor";
+import {
+  CodeEditor,
+  CodeHighlightInfo,
+  HighlightRange,
+  RangeMap,
+  RangeMapEntry,
+} from "./ui/CodeEditor";
 import { ASMGenerator } from "./compilers/riscv/ASMGenerator";
 import { AstNode } from "./languages/simpleC/nodes";
 import { MCGenerator } from "./assemblers/riscv/MCGenerator";
@@ -12,12 +18,17 @@ import { Computer } from "./simulator/System";
 import { Instruction } from "./assemblers/riscv/Instruction";
 
 import "./app.css";
+import produce from "immer";
+import { DRAFT_STATE } from "immer/dist/internal";
 
 const codeFile = require("./languages/simpleC/examples/fib.tc");
 const compiler = new ASMGenerator();
 const assembler = new MCGenerator();
 
-export const ComputerContext = React.createContext<{ computer: Computer; render: React.DispatchWithoutAction } | null>(null);
+export const ComputerContext = React.createContext<{
+  computer: Computer;
+  render: React.DispatchWithoutAction;
+} | null>(null);
 const computer = new Computer();
 
 export const App = () => {
@@ -31,9 +42,9 @@ export const App = () => {
   const [codePos, setCodePos] = useState(0);
   const [memPos, setMemPos] = useState(0);
 
-  const [codeRange, setCodeRange] = useState<HighlightRange[]>([]);
-  const [asmRange, setAsmRange] = useState<HighlightRange[]>([]);
-  const [memRange, setMemRange] = useState<HighlightRange[]>([]);
+  const [codeRange, setCodeRange] = useState<CodeHighlightInfo>(new CodeHighlightInfo());
+  const [asmRange, setAsmRange] = useState<CodeHighlightInfo>(new CodeHighlightInfo());
+  const [memRange, setMemRange] = useState<CodeHighlightInfo>(new CodeHighlightInfo());
 
   const [codeAsmRangeMap, setCodeAsmRangeMap] = useState<RangeMap>([]);
   const [asmMachineCodeRangeMap, setAsmMachineCodeRangeMap] = useState<RangeMap>([]);
@@ -54,36 +65,44 @@ export const App = () => {
 
   const updateAsmAst = (ast: ASMRootNode) => {
     const { instructions, rangeMap } = assembler.codegen(ast);
+    console.log("updateAsmAst", instructions.length);
+    setAsmRange(new CodeHighlightInfo());
     setInstructions(instructions);
     // setMemory(instructions.map((i) => i.machineCode));
     instructions.forEach((ins, i) => computer.mem.write(i * 4, 4, ins.machineCode));
-    setAsmRange([]);
     setAsmMachineCodeRangeMap(rangeMap);
   };
 
+  function setRanges(matches) {
+    setCodeRange(
+      produce((draft) => {
+        draft.code = matches.map((m) => ({ ...m.left, col: "#d4fafa" }));
+      })
+    );
+    setAsmRange(
+      produce((draft) => {
+        draft.code = matches.map((m) => ({ ...m.right, col: "#d4fafa" }));
+      })
+    );
+  }
+
+  // response to change of asm position -> set code/asm highlight, preserve pc
   useEffect(() => {
     // find the rangemap entry for the current asm position
-    const codeRange = codeAsmRangeMap
+    const matches = codeAsmRangeMap
       .slice()
       .reverse()
-      .find((x) => asmPos >= x.right.startPos && asmPos <= x.right.endPos);
-    if (codeRange) {
-      setCodeRange((arr) => [...arr, codeRange.left]);
-      setAsmRange((arr) => [...arr, codeRange.right]);
-    }
+      .filter((x) => asmPos >= x.right.startPos && asmPos <= x.right.endPos);
+    setRanges(matches);
   }, [asmPos, codeAsmRangeMap]);
 
   useEffect(() => {
     // find the rangemap entry for the current asm position
-    const codeRange = codeAsmRangeMap
+    const matches = codeAsmRangeMap
       .slice()
       .reverse()
-      .find((x) => codePos >= x.left.startPos && codePos <= x.left.endPos);
-
-    if (codeRange) {
-      setCodeRange((arr) => [...arr, codeRange.left]);
-      setAsmRange((arr) => [...arr, codeRange.right]);
-    }
+      .filter((x) => codePos >= x.left.startPos && codePos <= x.left.endPos);
+    setRanges(matches);
   }, [codePos, codeAsmRangeMap]);
 
   useEffect(() => {
@@ -93,19 +112,45 @@ export const App = () => {
       .reverse()
       .find((x) => asmPos >= x.left.startPos && asmPos <= x.left.endPos);
     if (codeRange) {
-      setMemRange((arr) => [...arr, codeRange.right]);
+      // setMemRange((arr) => [...arr, codeRange.right]);
     }
   }, [asmPos, asmMachineCodeRangeMap]);
 
   useEffect(() => {
     const i = instructions[computer.cpu.pcLast / 4];
-
     if (i) {
-      setCodeRange([]);
-      setAsmRange([]);
-      setAsmRange([{ startPos: i.pos[0], endPos: i.pos[1], col: "red" }]);
+      // find the instruction matching pcLast - this has the corresponding asm pos stored in pos
+      // look up asm pos (right) in codeAsmRangeMap to get the code pos (left)
+      setCodeRange(
+        produce((draft) => {
+          const codeRange = codeAsmRangeMap
+            .slice()
+            .reverse()
+            .find((x) => i.pos[0] >= x.right.startPos && i.pos[0] <= x.right.endPos);
+          if (codeRange) {
+            draft.pc = {
+              startPos: codeRange.left.startPos,
+              endPos: codeRange.left.endPos,
+              col: "#ede7f6",
+            };
+          } else {
+            debugger;
+            draft.pc = {
+              startPos: 0,
+              endPos: 0,
+              col: "red",
+            };
+          }
+        })
+      );
+
+      setAsmRange(
+        produce((draft) => {
+          draft.pc = { startPos: i.pos[0], endPos: i.pos[1], col: "#ede7f6" };
+        })
+      );
     }
-  }, [computer.cpu.pcLast, instructions]);
+  }, [instructions, codeAsmRangeMap, computer.cpu.pcLast]);
 
   const [, render] = useReducer((p) => !p, false);
 
@@ -115,13 +160,23 @@ export const App = () => {
         <ComputerContext.Provider value={{ computer, render }}>
           <ReflexContainer orientation="vertical">
             <ReflexElement className="c-pane">
-              <CodeEditor code={code} lang="simpleC" updateAst={updateCAst} updatePos={setCodePos} highlightRanges={codeRange}></CodeEditor>
+              <CodeEditor
+                code={code}
+                lang="simpleC"
+                updateAst={updateCAst}
+                updatePos={setCodePos}
+                highlightRanges={codeRange}></CodeEditor>
             </ReflexElement>
 
             <ReflexSplitter />
 
             <ReflexElement className="asm-pane">
-              <CodeEditor code={asm} lang="simpleASM" updateAst={updateAsmAst} updatePos={setAsmPos} highlightRanges={asmRange}></CodeEditor>
+              <CodeEditor
+                code={asm}
+                lang="simpleASM"
+                updateAst={updateAsmAst}
+                updatePos={setAsmPos}
+                highlightRanges={asmRange}></CodeEditor>
             </ReflexElement>
 
             <ReflexSplitter />

@@ -1,5 +1,18 @@
 import { ArrowForwardIcon, ArrowRightIcon, RepeatIcon } from "@chakra-ui/icons";
-import { Table, TableContainer, Tbody, Th, Thead, Tr, Td, ButtonGroup, Center, HStack, Spacer, IconButton } from "@chakra-ui/react";
+import {
+  Table,
+  TableContainer,
+  Tbody,
+  Th,
+  Thead,
+  Tr,
+  Td,
+  ButtonGroup,
+  Center,
+  HStack,
+  Spacer,
+  IconButton,
+} from "@chakra-ui/react";
 import { useContext } from "react";
 import { ComputerContext } from "../../App";
 import { instructionFields, instructionFormats } from "../../assemblers/riscv/Instruction";
@@ -26,10 +39,15 @@ export const IR = () => {
     <Tr>
       {instructionFormats[ir.iType].map((field, i) => {
         const offsets = instructionFields[field];
+        if (offsets.length === 1) offsets.push(offsets[0]);
         const length = offsets[0] - offsets[1] + 1;
         return (
           <Td key={i} colSpan={length} bg={colors[field.substring(0, 3)]} className={type}>
-            <Center>{type === "name" ? field : formatFn(unsignedSlice(ir.machineCode, offsets[0], offsets[1]), length)}</Center>
+            <Center>
+              {type === "name"
+                ? field
+                : formatFn(unsignedSlice(ir.machineCode, offsets[0], offsets[1]), length)}
+            </Center>
           </Td>
         );
       })}
@@ -49,8 +67,17 @@ export const IR = () => {
             <Th colSpan={32} paddingLeft={"10px"} paddingRight={"10px"}>
               <HStack>
                 <ButtonGroup size="xs" isAttached variant="outline">
-                  <IconButton onClick={handleStep} size="xs" icon={<RepeatIcon />} aria-label={""}></IconButton>
-                  <IconButton onClick={handleStep} size="xs" icon={<ArrowForwardIcon />} aria-label={""} />
+                  <IconButton
+                    onClick={handleStep}
+                    size="xs"
+                    icon={<RepeatIcon />}
+                    aria-label={""}></IconButton>
+                  <IconButton
+                    onClick={handleStep}
+                    size="xs"
+                    icon={<ArrowForwardIcon />}
+                    aria-label={""}
+                  />
                   <IconButton
                     onClick={() => {
                       computer.run();

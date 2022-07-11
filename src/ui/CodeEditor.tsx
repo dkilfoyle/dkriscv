@@ -13,9 +13,10 @@ import { ErrorListener } from "../languages/simpleC/ErrorListener";
 import { AstNode } from "../languages/simpleC/nodes";
 import { simpleC } from "../languages/simpleC/simplec-lang";
 import { Decoration } from "@codemirror/view";
-import { RangeSetBuilder } from "@codemirror/state";
+import { RangeSetBuilder, EditorSelection } from "@codemirror/state";
 
 import { ViewPlugin, DecorationSet, ViewUpdate } from "@codemirror/view";
+import { immerable } from "immer";
 
 export type HighlightRange = { startPos: number; endPos: number; col: string };
 
@@ -25,17 +26,33 @@ export interface RangeMapEntry {
 }
 export type RangeMap = RangeMapEntry[];
 
+export class CodeHighlightInfo {
+  [immerable] = true;
+  pc: HighlightRange;
+  code: HighlightRange[];
+  constructor() {
+    this.pc = { startPos: 0, endPos: 0, col: "transpartent" };
+    this.code = [];
+  }
+  toArray() {
+    return [...this.code, this.pc];
+  }
+}
+
 const baseTheme = EditorView.baseTheme({
   "&light .cm-zebraStripe": { backgroundColor: "#d4fafa" },
   "&dark .cm-zebraStripe": { backgroundColor: "#1a2727" },
 });
 
-let lexer: Lexer, parser: SimpleCParser | SimpleASMParser, builder: SimpleASMAstBuilder | SimpleCAstBuilder, tokenStream: CommonTokenStream;
+let lexer: Lexer,
+  parser: SimpleCParser | SimpleASMParser,
+  builder: SimpleASMAstBuilder | SimpleCAstBuilder,
+  tokenStream: CommonTokenStream;
 
 export const CodeEditor = (props: {
   lang: string;
   code: string;
-  highlightRanges: HighlightRange[];
+  highlightRanges: CodeHighlightInfo;
   updateAst: (root: ASMRootNode | AstNode) => void;
   updatePos: (pos: number) => void;
 }) => {
@@ -82,20 +99,29 @@ export const CodeEditor = (props: {
     });
   });
 
+  useEffect(() => {
+    if (cmCodeRef.current.view && cmCodeRef.current.state) {
+      const { state, view } = cmCodeRef.current;
+      view.dispatch({
+        effects: EditorView.scrollIntoView(props.highlightRanges.pc.startPos, { y: "center" }),
+      });
+    }
+  }, [props.highlightRanges.pc]);
+
   function rangeDeco(view: EditorView) {
-    const stripe = (col) =>
-      // Decoration.line({ style: `background: ${col}` });
-      Decoration.line({ class: "cm-zebraStripe" });
+    const stripe = (col) => Decoration.line({ attributes: { style: `background: ${col}` } });
+    // Decoration.line({ class: "cm-zebraStripe" });
     let builder = new RangeSetBuilder<Decoration>();
-    if (props.highlightRanges.length)
+    const ranges = props.highlightRanges.toArray();
+    if (ranges.length)
       for (let { from, to } of view.visibleRanges) {
         for (let pos = from; pos <= to; ) {
           let line = view.state.doc.lineAt(pos);
-          for (let { startPos, endPos, col } of props.highlightRanges) {
+          for (let { startPos, endPos, col } of ranges) {
             let highlightStartLine = view.state.doc.lineAt(startPos).number;
             let highlightEndLine = view.state.doc.lineAt(endPos).number;
-            // if (pos >= startPos && pos <= endPos) builder.add(line.from, line.from, stripe(col));
-            if (line.number >= highlightStartLine && line.number <= highlightEndLine) builder.add(line.from, line.from, stripe(col));
+            if (line.number >= highlightStartLine && line.number <= highlightEndLine)
+              builder.add(line.from, line.from, stripe(col));
           }
           pos = line.to + 1;
         }
@@ -112,7 +138,9 @@ export const CodeEditor = (props: {
       }
 
       update(update: ViewUpdate) {
-        if (update.docChanged || update.viewportChanged) this.decorations = rangeDeco(update.view);
+        if (update.docChanged || update.viewportChanged) {
+          this.decorations = rangeDeco(update.view);
+        }
       }
     },
     {
