@@ -8,7 +8,7 @@ export const Bus = (props) => {
   const { computer } = useContext(ComputerContext);
   return (
     <TableContainer>
-      <Table size="xs">
+      <Table size="sm">
         <Thead>
           <Tr>
             <Th colSpan={3}>

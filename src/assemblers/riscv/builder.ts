@@ -139,11 +139,15 @@ export class DataSection {
     this.pushByte(x >> 16);
     this.pushByte(x >> 24);
   }
+  getBytes() {
+    return this.data.slice(0, this.pointer);
+  }
 }
 
 export interface ASMRootNode {
   instructions: Instruction[];
   symbols: SymbolTable;
+  labels: SymbolTable;
   dataSection: DataSection;
 }
 
@@ -154,6 +158,7 @@ export class SimpleASMAstBuilder
   // textBytes: ArrayBuffer;
   // textView: DataView;
   instructions!: Instruction[];
+  labels!: SymbolTable;
   symbols!: SymbolTable;
   dataSection!: DataSection;
 
@@ -166,12 +171,13 @@ export class SimpleASMAstBuilder
     // this.textBytes = new ArrayBuffer(1000);
     // this.textView = new DataView(this.params.textBytes);
     this.instructions = new Array<Instruction>();
+    this.labels = {};
     this.symbols = {};
     this.dataSection = new DataSection();
   }
 
   protected defaultResult() {
-    return { instructions: [], symbols: {}, dataSection: undefined };
+    return { instructions: [], symbols: {}, labels: {}, dataSection: undefined };
   }
 
   visit(tree: ParseTree): ASMRootNode {
@@ -179,13 +185,14 @@ export class SimpleASMAstBuilder
     return {
       instructions: this.instructions,
       dataSection: this.dataSection,
+      labels: this.labels,
       symbols: this.symbols,
     };
   }
 
   visitLabel(ctx: LabelContext) {
     const label = ctx.ID().text;
-    this.symbols[label] = this.instructions.length * 4;
+    this.labels[label] = this.instructions.length * 4;
   }
 
   getPos(ctx: ParserRuleContext): [number, number] {
@@ -196,19 +203,21 @@ export class SimpleASMAstBuilder
   visitData(ctx: DataContext) {
     const name = ctx._name.text;
     const type = ctx._type.text;
-    this.symbols[name] = 0x1000_0000 + this.dataSection.pointer;
+    let str = ctx.String().text;
+    str = str.slice(1, str.length - 1); // strip ""
+    this.symbols[name] = this.dataSection.pointer;
     switch (type) {
       case ".string":
       case ".ascii":
       case ".asciiz": {
-        this.dataSection.pushString(ctx.String().text);
+        this.dataSection.pushString(str);
         break;
       }
       case ".byte":
-        this.dataSection.pushByte(parseInt(ctx.String().text));
+        this.dataSection.pushByte(parseInt(str));
         break;
       case ".word":
-        this.dataSection.pushWord(parseInt(ctx.String().text));
+        this.dataSection.pushWord(parseInt(str));
         break;
       default:
         throw new Error();

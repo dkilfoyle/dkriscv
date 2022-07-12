@@ -30,7 +30,7 @@ const colors = {
 };
 
 export const IR = () => {
-  const { computer, render } = useContext(ComputerContext);
+  const { computer, render, breakpoints } = useContext(ComputerContext);
   const ir = computer.cpu.instr;
 
   const { FormatSelector, formatFn } = useFormat();
@@ -59,6 +59,11 @@ export const IR = () => {
     render();
   };
 
+  const handleRun = () => {
+    while (!breakpoints.includes(computer.cpu.pc)) computer.step();
+    render();
+  };
+
   return (
     <TableContainer>
       <Table size="xs">
@@ -79,10 +84,7 @@ export const IR = () => {
                     aria-label={""}
                   />
                   <IconButton
-                    onClick={() => {
-                      computer.run();
-                      // props.setComputer(props.computer);
-                    }}
+                    onClick={handleRun}
                     size="xs"
                     icon={<ArrowRightIcon />}
                     aria-label={""}

@@ -28,6 +28,21 @@ export class Bus {
     return this.devices.filter((dev) => dev.accepts(address, size));
   }
 
+  readString(address: number) {
+    address = unsigned(address);
+    this.lastAddress = address;
+    const devices = this.getDevices(address, 1);
+    if (!devices.length) throw new Error();
+
+    const ch = devices[0].read(address, 1, false);
+    let str = "";
+    let counter = 0;
+    while (ch !== 0 && counter < 100) {
+      str += `${ch}`;
+    }
+    return str;
+  }
+
   read(address: number, size: number, signed: boolean) {
     address = unsigned(address);
     this.lastAddress = address;

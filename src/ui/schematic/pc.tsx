@@ -19,7 +19,7 @@ export const PC = () => {
 
   return (
     <TableContainer>
-      <Table size="xs">
+      <Table size="sm">
         <Thead>
           <Tr>
             <Th colSpan={2}>
@@ -34,7 +34,11 @@ export const PC = () => {
           <Tr>
             <td>pcCur</td>
             <td>
-              <CSSTransition in={inProp} timeout={duration} classNames="fade" onEntered={() => setInProp(false)}>
+              <CSSTransition
+                in={inProp}
+                timeout={duration}
+                classNames="fade"
+                onEntered={() => setInProp(false)}>
                 <span>{formatFn(computer.cpu.pcLast)}</span>
               </CSSTransition>
             </td>
@@ -42,7 +46,11 @@ export const PC = () => {
           <Tr>
             <td align="center">pc</td>
             <td align="right">
-              <CSSTransition in={inProp} timeout={duration} classNames="fade" onEntered={() => setInProp(false)}>
+              <CSSTransition
+                in={inProp}
+                timeout={duration}
+                classNames="fade"
+                onEntered={() => setInProp(false)}>
                 <span>{formatFn(computer.cpu.pc)}</span>
               </CSSTransition>
             </td>

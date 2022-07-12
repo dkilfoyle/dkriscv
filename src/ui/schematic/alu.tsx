@@ -10,7 +10,7 @@ export const ALU = () => {
   const cpu = computer.cpu;
   return (
     <TableContainer>
-      <Table size="xs">
+      <Table size="sm">
         <Thead>
           <Tr>
             <Th colSpan={3}>
@@ -30,12 +30,16 @@ export const ALU = () => {
           <Tr>
             <td>a</td>
             <td>{cpu.datapath.src1 === "x1" ? "x" + cpu.instr.params.rs1 : "pc"}</td>
-            <td className="value">{cpu.datapath.src1 === "x1" ? formatFn(cpu.x1) : formatFn(cpu.pc)}</td>
+            <td className="value">
+              {cpu.datapath.src1 === "x1" ? formatFn(cpu.x1) : formatFn(cpu.pc)}
+            </td>
           </Tr>
           <Tr>
             <td>b</td>
             <td>{cpu.datapath.src2 === "x2" ? "x" + cpu.instr.params.rs2 : "imm"}</td>
-            <td className="value">{cpu.datapath.src2 === "x2" ? formatFn(cpu.x2) : formatFn(cpu.instr.params.imm)}</td>
+            <td className="value">
+              {cpu.datapath.src2 === "x2" ? formatFn(cpu.x2) : formatFn(cpu.instr.params.imm)}
+            </td>
           </Tr>
           <Tr>
             <td>r</td>

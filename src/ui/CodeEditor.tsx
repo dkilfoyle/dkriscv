@@ -1,4 +1,5 @@
 import { lintGutter, linter } from "@codemirror/lint";
+import { minimalSetup } from "codemirror";
 import { EditorView } from "@codemirror/view";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import { CharStreams, CommonTokenStream, Lexer } from "antlr4ts";
@@ -17,6 +18,7 @@ import { RangeSetBuilder, EditorSelection } from "@codemirror/state";
 
 import { ViewPlugin, DecorationSet, ViewUpdate } from "@codemirror/view";
 import { immerable } from "immer";
+import { breakpointEffect, breakpointGutter, breakpointState } from "./breakpoint";
 
 export type HighlightRange = { startPos: number; endPos: number; col: string };
 
@@ -55,6 +57,7 @@ export const CodeEditor = (props: {
   highlightRanges: CodeHighlightInfo;
   updateAst: (root: ASMRootNode | AstNode) => void;
   updatePos: (pos: number) => void;
+  updateBreakpoints?: (pos: number, on: boolean) => void;
 }) => {
   const lintCode = linter((view: EditorView) => {
     switch (props.lang) {
@@ -155,13 +158,29 @@ export const CodeEditor = (props: {
     <CodeMirror
       ref={cmCodeRef}
       value={props.code}
-      extensions={[lintCode, lintGutter(), simpleC(), rangeHighlighter, baseTheme]}
+      extensions={[
+        minimalSetup,
+        lintCode,
+        lintGutter(),
+        simpleC(),
+        rangeHighlighter,
+        baseTheme,
+        breakpointGutter,
+      ]}
       onChange={(value, viewUpdate) => {
         setCodeChanged(true);
       }}
       onUpdate={(viewUpdate) => {
         if (viewUpdate.selectionSet) {
           props.updatePos(viewUpdate.transactions[0]?.selection.ranges[0].from);
+        } else if (viewUpdate.transactions.length && viewUpdate.transactions[0].effects.length) {
+          const effect = viewUpdate.transactions[0].effects[0];
+          if (effect.is(breakpointEffect)) {
+            props?.updateBreakpoints(
+              effect.value.pos + viewUpdate.state.doc.lineAt(effect.value.pos).text.search(/\S/), // value.pos is start of line so add any leading whitespace to searchpos
+              effect.value.on
+            );
+          }
         }
       }}
     />

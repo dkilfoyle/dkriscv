@@ -172,7 +172,9 @@ export class ASMGenerator {
     this.visitFunctionDeclaration(topLevelMain);
 
     // all the others
-    node.functions.slice(0, node.functions.length - 1).forEach((funDecl) => this.visitFunctionDeclaration(funDecl));
+    node.functions
+      .slice(0, node.functions.length - 1)
+      .forEach((funDecl) => this.visitFunctionDeclaration(funDecl));
   }
 
   visitFunctionDeclaration(node: AstFunctionDeclaration) {
@@ -309,7 +311,9 @@ export class ASMGenerator {
         R.SP,
         R.SP,
         scope.context.SP,
-        `reserve stack space for ${Object.keys(scope.entries).length} locals ${Object.keys(scope.entries)}`
+        `reserve stack space for ${Object.keys(scope.entries).length} locals ${Object.keys(
+          scope.entries
+        )}`
       );
     } else this.emitter.emitComment("no locals to reserve stack for");
 
@@ -335,8 +339,19 @@ export class ASMGenerator {
 
     if (node.initialExpression) {
       this.visitExpression(node.initialExpression);
-      this.emitter.emitSW(R.A0, R.FP, offset.fpoffset, `push local var ${node.id} to stack and init value`);
-    } else this.emitter.emitSW(R.ZERO, R.FP, offset.fpoffset, `push local var ${node.id} to stack and init to 0`);
+      this.emitter.emitSW(
+        R.A0,
+        R.FP,
+        offset.fpoffset,
+        `push local var ${node.id} to stack and init value`
+      );
+    } else
+      this.emitter.emitSW(
+        R.ZERO,
+        R.FP,
+        offset.fpoffset,
+        `push local var ${node.id} to stack and init to 0`
+      );
   }
 
   // visitArrayDeclaration(node: AstArrayDeclaration) {
@@ -413,10 +428,12 @@ export class ASMGenerator {
 
   visitConstExpression(node: AstConstExpression) {
     // return llvm.ConstantInt.get(this.context, node.value);
-    if (node.returnType() === "int") this.emitter.emitLI(R.A0, node.value, `Load constant ${node.value} to a0`);
+    if (node.returnType() === "int")
+      this.emitter.emitLI(R.A0, node.value, `Load constant ${node.value} to a0`);
     else if (node.returnType() === "string") {
       const label = this.newLabel("stringconst");
-      this.dataSection.push({ label, type: "asciiz", value: node.value });
+      let value = node.value as string;
+      this.dataSection.push({ label, type: "asciiz", value });
       this.emitter.emitLA(R.A0, label, "Load address of string const in data section");
     }
   }
@@ -424,7 +441,12 @@ export class ASMGenerator {
   visitVariableExpression(node: AstVariableExpression) {
     const id = node.declaration.id;
     const offset = this.scopeStack.getLocalVarOffset(id).fpoffset;
-    this.emitter.emitLW(R.A0, R.FP, offset, `retrieve ${offset <= 0 ? "func param" : "local variable"} ${node.declaration.id}`);
+    this.emitter.emitLW(
+      R.A0,
+      R.FP,
+      offset,
+      `retrieve ${offset <= 0 ? "func param" : "local variable"} ${node.declaration.id}`
+    );
     // if (typeof this.locals[id] != "undefined")
     //   this.emitter.emitLW(R.A0, R.FP, this.locals[id], `retrieve local variable ${node.declaration.id}`);
     // else {
@@ -438,37 +460,82 @@ export class ASMGenerator {
     this.visitExpression(node.lhs); // accumulator will be saved to a0 = result of LHS
     const lhsTempLabel = this.newLabel("LHSTemp");
     const offset = this.scopeStack.pushLocal(lhsTempLabel, 4);
-    this.pushStack(R.A0, `push a0 (LHS result of ${node.lhs.toCode()}) onto stack as ${lhsTempLabel} ${offset.fpoffset}`);
+    this.pushStack(
+      R.A0,
+      `push a0 (LHS result of ${node.lhs.toCode()}) onto stack as ${lhsTempLabel} ${
+        offset.fpoffset
+      }`
+    );
 
     // compute RHS, result in A0
     this.visitExpression(node.rhs); // accumulator will be saved to a0 = result of RHS
 
     // retrieve LHS in T1
-    this.emitter.emitLW(R.T1, R.FP, this.scopeStack.getLocalVarOffset(lhsTempLabel).fpoffset, `t1 = saved LHS (${lhsTempLabel})`);
+    this.emitter.emitLW(
+      R.T1,
+      R.FP,
+      this.scopeStack.getLocalVarOffset(lhsTempLabel).fpoffset,
+      `t1 = saved LHS (${lhsTempLabel})`
+    );
 
     switch (node.op) {
       case "+":
-        this.emitter.emitADD(R.A0, R.T1, R.A0, `a0 = t1 + a0 (${node.lhs.toCode()}) + ${node.rhs.toCode()})`);
+        this.emitter.emitADD(
+          R.A0,
+          R.T1,
+          R.A0,
+          `a0 = t1 + a0 (${node.lhs.toCode()}) + ${node.rhs.toCode()})`
+        );
         break;
       case "-":
-        this.emitter.emitSUB(R.A0, R.T1, R.A0, `a0 = t1 - a0 (${node.lhs.toCode()}) - ${node.rhs.toCode()})`);
+        this.emitter.emitSUB(
+          R.A0,
+          R.T1,
+          R.A0,
+          `a0 = t1 - a0 (${node.lhs.toCode()}) - ${node.rhs.toCode()})`
+        );
         break;
       case "==":
-        this.emitter.emitSUB(R.A0, R.T1, R.A0, `a0 = t1 - a0 (${node.lhs.toCode()}) - ${node.rhs.toCode()})`);
+        this.emitter.emitSUB(
+          R.A0,
+          R.T1,
+          R.A0,
+          `a0 = t1 - a0 (${node.lhs.toCode()}) - ${node.rhs.toCode()})`
+        );
         this.emitter.emitSEQZ(R.A0, R.A0, "a0 = a0 (lhs-rhs) == 0");
         break;
       case "<":
-        this.emitter.emitSLT(R.A0, R.T1, R.A0, `a0 = t1 < a0 (${node.lhs.toCode()} < ${node.rhs.toCode()})`);
+        this.emitter.emitSLT(
+          R.A0,
+          R.T1,
+          R.A0,
+          `a0 = t1 < a0 (${node.lhs.toCode()} < ${node.rhs.toCode()})`
+        );
         break;
       case ">=":
-        this.emitter.emitSLT(R.A0, R.T1, R.A0, `a0 = t1 < a0 (${node.lhs.toCode()} < ${node.rhs.toCode()})`);
+        this.emitter.emitSLT(
+          R.A0,
+          R.T1,
+          R.A0,
+          `a0 = t1 < a0 (${node.lhs.toCode()} < ${node.rhs.toCode()})`
+        );
         this.emitter.emitNOT(R.A0, R.A0, "A0 = !A0 because >= is !<");
         break;
       case ">":
-        this.emitter.emitSLT(R.A0, R.A0, R.T1, `a0 = a0 < t1 (equiv a0 > t1) (${node.lhs.toCode()} > ${node.rhs.toCode()})`);
+        this.emitter.emitSLT(
+          R.A0,
+          R.A0,
+          R.T1,
+          `a0 = a0 < t1 (equiv a0 > t1) (${node.lhs.toCode()} > ${node.rhs.toCode()})`
+        );
         break;
       case "<=":
-        this.emitter.emitSLT(R.A0, R.A0, R.T1, `a0 = a0 (rhs: ${node.rhs.toCode()}) < t1 (lhs: ${node.lhs.toCode()})`);
+        this.emitter.emitSLT(
+          R.A0,
+          R.A0,
+          R.T1,
+          `a0 = a0 (rhs: ${node.rhs.toCode()}) < t1 (lhs: ${node.lhs.toCode()})`
+        );
         this.emitter.emitNOT(R.A0, R.A0, "A0 = !A0 because <= is !>");
         break;
       default:

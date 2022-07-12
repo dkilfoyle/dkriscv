@@ -20,7 +20,7 @@ export const Comparator = (props) => {
 
   return (
     <TableContainer>
-      <Table size="xs">
+      <Table size="sm">
         <Thead>
           <Tr>
             <Th colSpan={3}>

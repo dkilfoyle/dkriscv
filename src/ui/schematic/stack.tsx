@@ -1,4 +1,15 @@
-import { Table, TableContainer, Td, Th, Tr, Tbody, Thead, Button, HStack, ButtonGroup } from "@chakra-ui/react";
+import {
+  Table,
+  TableContainer,
+  Td,
+  Th,
+  Tr,
+  Tbody,
+  Thead,
+  Button,
+  HStack,
+  ButtonGroup,
+} from "@chakra-ui/react";
 import { useContext, useState } from "react";
 import { ComputerContext } from "../../App";
 import { memSize } from "../../simulator/System";
@@ -8,7 +19,9 @@ import { useFormat } from "../../utils/useFormat";
 export const Stack = (props: { highlightRange?: [number, number] }) => {
   const style = (i) => {
     if (i === computer.cpu.getX(8)) return { backgroundColor: "#A5D6A7" };
-    return props.highlightRange && i >= props.highlightRange[0] && i <= props.highlightRange[1] ? { backgroundColor: "#d4fafa" } : {};
+    return props.highlightRange && i >= props.highlightRange[0] && i <= props.highlightRange[1]
+      ? { backgroundColor: "#d4fafa" }
+      : {};
   };
 
   const { computer } = useContext(ComputerContext);
@@ -70,7 +83,7 @@ export const Stack = (props: { highlightRange?: [number, number] }) => {
   const stackAddresses = [...Array(stackSizeWords)].map((_, i) => memSize - i * 4);
 
   return (
-    <TableContainer>
+    <TableContainer className="ramTable">
       <Table size="sm">
         <Thead>
           <Tr>
