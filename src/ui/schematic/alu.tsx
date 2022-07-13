@@ -1,4 +1,4 @@
-import { HStack, Spacer, Table, TableContainer, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
+import { HStack, Spacer, Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
 import { useContext } from "react";
 import { ComputerContext } from "../../App";
 import { useFormat } from "../../utils/useFormat";

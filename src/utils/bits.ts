@@ -1,5 +1,3 @@
-import { workerData } from "worker_threads";
-
 export const maskBits = (hi: number, lo: number = hi) => {
   let mask = 0;
   for (let i = lo, j = 0; i <= hi; i++, j++) mask |= 1 << j;
@@ -42,7 +40,7 @@ export function unsignedSlice(word, left, right, pos = 0) {
 }
 
 export function getByte(word, byte) {
-  if (byte == 0) throw new Error("byte is indexed from 1");
+  if (byte === 0) throw new Error("byte is indexed from 1");
   return unsignedSlice(word, byte * 8 - 1, (byte - 1) * 8);
 }
 

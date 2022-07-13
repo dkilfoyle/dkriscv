@@ -21,7 +21,7 @@ export const Ram = (props: { highlightRanges?: CodeHighlightInfo }) => {
   const memory = computer.mem;
 
   // const [memFormat, setMemFormat] = useState("bytes");
-  const { FormatSelector, formatFn, format } = useFormat("8", "8DUS");
+  const { FormatSelector, format } = useFormat("8", "8DUS");
 
   const formatMem = (i) => {
     switch (format) {

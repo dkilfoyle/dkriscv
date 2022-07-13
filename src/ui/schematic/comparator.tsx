@@ -1,7 +1,6 @@
 import { HStack, Spacer, Table, TableContainer, Tbody, Th, Thead, Tr } from "@chakra-ui/react";
 import { useContext } from "react";
 import { ComputerContext } from "../../App";
-import { unsigned } from "../../utils/bits";
 import { useFormat } from "../../utils/useFormat";
 
 const BRANCH_TO_OP = {

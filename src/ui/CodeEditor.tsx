@@ -14,11 +14,11 @@ import { ErrorListener } from "../languages/simpleC/ErrorListener";
 import { AstNode } from "../languages/simpleC/nodes";
 import { simpleC } from "../languages/simpleC/simplec-lang";
 import { Decoration } from "@codemirror/view";
-import { RangeSetBuilder, EditorSelection } from "@codemirror/state";
+import { RangeSetBuilder } from "@codemirror/state";
 
 import { ViewPlugin, DecorationSet, ViewUpdate } from "@codemirror/view";
 import { immerable } from "immer";
-import { breakpointEffect, breakpointGutter, breakpointState } from "./breakpoint";
+import { breakpointEffect, breakpointGutter } from "./breakpoint";
 
 export type HighlightRange = { startPos: number; endPos: number; col: string };
 
@@ -104,7 +104,7 @@ export const CodeEditor = (props: {
 
   useEffect(() => {
     if (cmCodeRef.current.view && cmCodeRef.current.state) {
-      const { state, view } = cmCodeRef.current;
+      const { view } = cmCodeRef.current;
       view.dispatch({
         effects: EditorView.scrollIntoView(props.highlightRanges.pc.startPos, { y: "center" }),
       });

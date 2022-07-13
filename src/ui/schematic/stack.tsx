@@ -1,16 +1,5 @@
-import {
-  Table,
-  TableContainer,
-  Td,
-  Th,
-  Tr,
-  Tbody,
-  Thead,
-  Button,
-  HStack,
-  ButtonGroup,
-} from "@chakra-ui/react";
-import { useContext, useState } from "react";
+import { Table, TableContainer, Td, Th, Tr, Tbody, Thead, HStack } from "@chakra-ui/react";
+import { useContext } from "react";
 import { ComputerContext } from "../../App";
 import { memSize } from "../../simulator/System";
 import { getBytes } from "../../utils/bits";
@@ -28,7 +17,7 @@ export const Stack = (props: { highlightRange?: [number, number] }) => {
   const memory = computer.mem;
 
   // const [memFormat, setMemFormat] = useState("bytes");
-  const { FormatSelector, formatFn, format } = useFormat("8", "8DUS");
+  const { FormatSelector, format } = useFormat("8", "8DUS");
 
   const formatMem = (i) => {
     switch (format) {

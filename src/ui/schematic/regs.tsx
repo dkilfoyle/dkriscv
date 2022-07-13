@@ -1,8 +1,7 @@
-import { Button, ButtonGroup, HStack, Spacer, Table, TableContainer, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
-import { useContext, useState } from "react";
+import { HStack, Spacer, Table, TableContainer, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
+import { useContext } from "react";
 import { ComputerContext } from "../../App";
 import { registerNames } from "../../assemblers/riscv/builder";
-import { Processor } from "../../simulator/Processor";
 import { useFormat } from "../../utils/useFormat";
 
 export const Regs = () => {

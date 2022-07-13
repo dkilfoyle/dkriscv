@@ -78,6 +78,7 @@ export class Processor {
   irqState: boolean;
   acceptingIrq: boolean;
   console: string[];
+  isExit: boolean;
 
   constructor(nx, bus) {
     // Créer et initialiser la banque de registres.
@@ -105,6 +106,7 @@ export class Processor {
     this.loadStoreError = false;
     this.state = "fetch";
     this.console = [];
+    this.isExit = false;
   }
 
   fetch() {
@@ -128,13 +130,20 @@ export class Processor {
   ecall() {
     const a1 = this.getX(11); // a1
     const etype = this.getX(10); // a0
-    if (etype === 4) {
-      const str = this.bus.readString(a1);
-      this.console.push(str);
-      console.log("ecall printstring: ", str);
-    } else if (etype === 1) {
-      this.console.push(`${a1}`);
-      console.log("ecall print_int: ", a1);
+    switch (etype) {
+      case 1: // print_int
+        this.console.push(`${a1}`);
+        console.log("ecall print_int: ", a1);
+        break;
+      case 4:
+        const str = this.bus.readString(a1);
+        this.console.push(str);
+        console.log("ecall printstring: ", str);
+        break;
+      case 10: // exit
+        this.isExit = true;
+        console.log("ecall exit");
+        break;
     }
     this.state = "updatePC";
   }

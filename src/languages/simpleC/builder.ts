@@ -62,7 +62,10 @@ import {
 import { ScopeStack } from "./scopeStack";
 import { AllowedTypes } from "./signature";
 
-export class SimpleCAstBuilder extends AbstractParseTreeVisitor<AstNode> implements SimpleCVisitor<AstNode> {
+export class SimpleCAstBuilder
+  extends AbstractParseTreeVisitor<AstNode>
+  implements SimpleCVisitor<AstNode>
+{
   scopeStack: ScopeStack<AstIdentifierDeclaration, void>;
   anonMax: number = 0;
 
@@ -78,7 +81,8 @@ export class SimpleCAstBuilder extends AbstractParseTreeVisitor<AstNode> impleme
   }
 
   createMainFunction(ctx: ParserRuleContext, body: AstBlock) {
-    if (!(body.body[body.body.length - 1] instanceof AstReturn)) body.body.push(new AstReturn(ctx, new AstConstExpression(ctx, 0, "int")));
+    if (!(body.body[body.body.length - 1] instanceof AstReturn))
+      body.body.push(new AstReturn(ctx, new AstConstExpression(ctx, 0, "int")));
     const main = new AstFunctionDeclaration(ctx, "int", "main", [], body);
     this.scopeStack.setSymbol("main", main);
     return main;
@@ -107,13 +111,22 @@ export class SimpleCAstBuilder extends AbstractParseTreeVisitor<AstNode> impleme
         new AstVariableDeclaration(ctx, "msg", "string"),
         new AstVariableDeclaration(ctx, "val", "int"),
       ]),
-      this.createStdLibFunction(ctx, "printf", [new AstVariableDeclaration(ctx, "format", "string")]), //, new AstVariableDeclaration(ctx, "val", "int")]),
-      this.createStdLibFunction(ctx, "print_int", [new AstVariableDeclaration(ctx, "value", "int")]), //, new AstVariableDeclaration(ctx, "val", "int")]),
-      this.createStdLibFunction(ctx, "print_string", [new AstVariableDeclaration(ctx, "value", "string")]), //, new AstVariableDeclaration(ctx, "val", "int")]),
+      this.createStdLibFunction(ctx, "printf", [
+        new AstVariableDeclaration(ctx, "format", "string"),
+      ]), //, new AstVariableDeclaration(ctx, "val", "int")]),
+      this.createStdLibFunction(ctx, "print_int", [
+        new AstVariableDeclaration(ctx, "value", "int"),
+      ]), //, new AstVariableDeclaration(ctx, "val", "int")]),
+      this.createStdLibFunction(ctx, "print_string", [
+        new AstVariableDeclaration(ctx, "value", "string"),
+      ]), //, new AstVariableDeclaration(ctx, "val", "int")]),
       ...ctx.functionDecl().map((decl) => this.visitFunctionDecl(decl)),
     ];
 
-    if (ctx.statements().childCount) functions.push(this.createMainFunction(ctx.statements(), this.visitStatements(ctx.statements())));
+    if (ctx.statements().childCount)
+      functions.push(
+        this.createMainFunction(ctx.statements(), this.visitStatements(ctx.statements()))
+      );
 
     return new AstRepl(ctx, functions);
   }
@@ -211,7 +224,10 @@ export class SimpleCAstBuilder extends AbstractParseTreeVisitor<AstNode> impleme
   }
 
   visitReturnStatement(ctx: ReturnStatementContext) {
-    return new AstReturn(ctx, ctx.expression() ? this.visitExpression(ctx.expression()) : undefined);
+    return new AstReturn(
+      ctx,
+      ctx.expression() ? this.visitExpression(ctx.expression()) : undefined
+    );
   }
 
   visitVariableDeclaration(ctx: VariableDeclarationContext) {
@@ -227,7 +243,9 @@ export class SimpleCAstBuilder extends AbstractParseTreeVisitor<AstNode> impleme
               idctx,
               id,
               varType as AllowedTypes,
-              idctx.dimensions().map((dimCtx) => (dimCtx.Number() ? Number(dimCtx.Number().text) : -1))
+              idctx
+                .dimensions()
+                .map((dimCtx) => (dimCtx.Number() ? Number(dimCtx.Number().text) : -1))
             )
           : new AstVariableDeclaration(
               idctx,
@@ -244,7 +262,8 @@ export class SimpleCAstBuilder extends AbstractParseTreeVisitor<AstNode> impleme
 
   visitAssignment(ctx: AssignmentContext) {
     const lhs = this.visitExpression(ctx.expression(0));
-    if (!(lhs instanceof AstVariableExpression)) return new AstError(ctx, `lhs of assignment is not a variable`);
+    if (!(lhs instanceof AstVariableExpression))
+      return new AstError(ctx, `lhs of assignment is not a variable`);
     const rhs = this.visitExpression(ctx.expression(1));
     return new AstAssignment(ctx, lhs, rhs);
   }
@@ -263,7 +282,8 @@ export class SimpleCAstBuilder extends AbstractParseTreeVisitor<AstNode> impleme
           .map((expr) => this.visit(expr) as AstExpression)
       : [];
 
-    if (params.length !== funDecl.signature.paramTypes.length) return new AstError(ctx, `function ${id} incorrect number of params`);
+    if (params.length !== funDecl.signature.paramTypes.length)
+      return new AstError(ctx, `function ${id} incorrect number of params`);
     const matches = params.every((param, i) => {
       // console.log(i, param);
       return param.returnType() === funDecl.signature.paramTypes[i];
@@ -361,6 +381,7 @@ export class SimpleCAstBuilder extends AbstractParseTreeVisitor<AstNode> impleme
   visitFunctionDecl(ctx: FunctionDeclContext) {
     const funType = ctx.funType().text as AllowedTypes;
     const id = ctx.Identifier().text;
+    this.scopeStack.enterScope(`fun(${id})`);
 
     let params;
     if (ctx.paramList()) {
@@ -368,7 +389,6 @@ export class SimpleCAstBuilder extends AbstractParseTreeVisitor<AstNode> impleme
         .paramList()
         .param()
         .map((param) => this.visitParam(param));
-      this.scopeStack.enterScope(`fun(${id})`);
       params.forEach((param) => this.scopeStack.setSymbol(param.id, param));
     } else params = [];
 
@@ -379,7 +399,7 @@ export class SimpleCAstBuilder extends AbstractParseTreeVisitor<AstNode> impleme
     const body = this.visitReturnBlock(ctx.returnBlock(), `fun(${id})body`);
     funcDecl.body = body;
 
-    if (params.length) this.scopeStack.disposeScope(); // dispose param scope
+    this.scopeStack.disposeScope(); // dispose param scope
     this.scopeStack.setSymbol(id, funcDecl); // add to the top level stack so can be found by external callers as well
 
     return funcDecl;

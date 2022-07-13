@@ -16,7 +16,7 @@ export class ScopeStack<NodeT, ContextT> {
   }
   enterScope(name: string = "noname", context?: ContextT) {
     this.scopes.push({ name, context, entries: {} });
-    return this.scopes[this.scopes.length-1]
+    return this.scopes[this.scopes.length - 1];
   }
   currentStack() {
     return this.scopes.slice().reverse();
@@ -36,24 +36,24 @@ export class ScopeStack<NodeT, ContextT> {
   }
   setSymbol(name: string, value: NodeT) {
     let [found, stackVar] = this.getSymbol(name);
-    if (found)
-      stackVar = value;
-    else
-      this.top().entries[name] = value;
+    if (found) {
+      debugger;
+      console.log("Symbol already assigned", stackVar);
+      // stackVar = value;
+    } else this.top().entries[name] = value;
   }
   hasSymbol(name: string) {
-    return this.scopes.some(scope => scope.entries.hasOwnProperty(name));
+    return this.scopes.some((scope) => scope.entries.hasOwnProperty(name));
   }
   getSymbol(name: string): [boolean, NodeT] {
     // enumerate backwards
-    const found = this.currentStack().find(scope => {
-      if (scope.entries.hasOwnProperty(name)) return true;
-    });
+    const found = this.currentStack().find((scope) => scope.entries.hasOwnProperty(name));
     return found ? [true, found.entries[name]] : [false, undefined];
   }
   newSymbol(name: string, value: NodeT) {
     // shouldnt already be delcared in current scope
-    if (this.top().entries.hasOwnProperty(name)) throw new Error(`${name} already exists in current scope`);
+    if (this.top().entries.hasOwnProperty(name))
+      throw new Error(`${name} already exists in current scope`);
     this.top().entries[name] = value;
   }
 }

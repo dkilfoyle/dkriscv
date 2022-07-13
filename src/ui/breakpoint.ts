@@ -14,7 +14,7 @@ export const breakpointState = StateField.define<RangeSet<GutterMarker>>({
     for (let e of transaction.effects) {
       if (e.is(breakpointEffect)) {
         if (e.value.on) set = set.update({ add: [breakpointMarker.range(e.value.pos)] });
-        else set = set.update({ filter: (from) => from != e.value.pos });
+        else set = set.update({ filter: (from) => from !== e.value.pos });
       }
     }
     return set;

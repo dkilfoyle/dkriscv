@@ -34,13 +34,15 @@ export class Bus {
     const devices = this.getDevices(address, 1);
     if (!devices.length) throw new Error();
 
-    const ch = devices[0].read(address, 1, false);
-    let str = "";
-    let counter = 0;
-    while (ch !== 0 && counter < 100) {
-      str += `${ch}`;
+    let ch = devices[0].read(address, 1, false);
+    let str = [ch];
+    let offset = 1;
+    while (ch !== 0 && offset < 100) {
+      ch = devices[0].read(address + offset, 1, false);
+      if (ch !== 0) str.push(ch);
+      offset++;
     }
-    return str;
+    return String.fromCharCode(...str);
   }
 
   read(address: number, size: number, signed: boolean) {

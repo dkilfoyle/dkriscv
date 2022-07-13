@@ -9,25 +9,23 @@ import {
   Textarea,
 } from "@chakra-ui/react";
 import { useContext } from "react";
-import { useEffect, useState } from "react";
+// import { useEffect, useState } from "react";
 import { ComputerContext } from "../../App";
-import { useFormat } from "../../utils/useFormat";
 import { ALU } from "./alu";
 import { Bus } from "./bus";
 import { Comparator } from "./comparator";
 import { PC } from "./pc";
 import "./schematic.css";
 
-const duration = 300;
+// const duration = 300;
 
 export const DataPath = () => {
-  const { FormatSelector, formatFn } = useFormat("H");
   const { computer } = useContext(ComputerContext);
 
-  const [inProp, setInProp] = useState(false);
-  useEffect(() => {
-    setInProp(true);
-  }, [computer.cpu.pc]);
+  // const [inProp, setInProp] = useState(false);
+  // useEffect(() => {
+  //   setInProp(true);
+  // }, [computer.cpu.pc]);
 
   return (
     <Box className="datapathBox" flex="1">

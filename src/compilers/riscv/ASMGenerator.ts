@@ -214,13 +214,17 @@ export class ASMGenerator {
     this.visitBlock(node.body, `${node.id} body`, scope);
     this.emitter.emitComment(`${node.id} epilogue`);
 
-    // Epilog
-    this.emitter.emitLW(R.RA, R.FP, -1 * WORD_SIZE, "load saved RA");
-    this.emitter.emitMV(R.T0, R.FP, "temp current FP (also = old SP)");
-    this.emitter.emitLW(R.FP, R.FP, -2 * WORD_SIZE, "restore callers FP");
-    this.emitter.emitMV(R.SP, R.T0, "restore caller's SP, deleting the callee AR");
-
-    this.emitter.emitJR(R.RA, "jump back to caller (RA)");
+    if (node.id === "main") {
+      this.emitter.emitLI(R.A0, 10, "Set A0 to 10 for exit ecall");
+      this.emitter.emitECALL();
+    } else {
+      // Epilog
+      this.emitter.emitLW(R.RA, R.FP, -1 * WORD_SIZE, "load saved RA");
+      this.emitter.emitMV(R.T0, R.FP, "temp current FP (also = old SP)");
+      this.emitter.emitLW(R.FP, R.FP, -2 * WORD_SIZE, "restore callers FP");
+      this.emitter.emitMV(R.SP, R.T0, "restore caller's SP, deleting the callee AR");
+      this.emitter.emitJR(R.RA, "jump back to caller (RA)");
+    }
 
     this.rangeMap.push({
       left: { startPos: node.pos[0], endPos: node.pos[1], col: "#d4fafa" },
@@ -433,7 +437,7 @@ export class ASMGenerator {
     else if (node.returnType() === "string") {
       const label = this.newLabel("stringconst");
       let value = node.value as string;
-      this.dataSection.push({ label, type: "asciiz", value });
+      this.dataSection.push({ label, type: "asciiz", value: value + "\0" });
       this.emitter.emitLA(R.A0, label, "Load address of string const in data section");
     }
   }
