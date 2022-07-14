@@ -1,8 +1,8 @@
 // Adapted from https://raw.githubusercontent.com/Guillaume-Savaton-ESEO/emulsiV/master/src/virgule.js
 
+import { Instruction } from "../languages/riv32asm/parser/Instruction";
 import { unsignedSlice, signed, unsigned } from "../utils/bits";
 import { Bus } from "./Bus.js";
-import { Instruction } from "../assemblers/riscv/Instruction";
 import { memSize } from "./System";
 
 interface Datapath {

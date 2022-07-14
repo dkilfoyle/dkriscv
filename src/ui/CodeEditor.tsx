@@ -4,15 +4,7 @@ import { EditorView } from "@codemirror/view";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import { CharStreams, CommonTokenStream, Lexer } from "antlr4ts";
 import { useEffect, useRef, useState } from "react";
-import { SimpleASMLexer } from "../assemblers/riscv/antlr/SimpleASMLexer";
-import { SimpleASMParser } from "../assemblers/riscv/antlr/SimpleASMParser";
-import { ASMRootNode, SimpleASMAstBuilder } from "../assemblers/riscv/builder";
-import { SimpleCLexer } from "../languages/simpleC/antlr/SimpleCLexer";
-import { SimpleCParser } from "../languages/simpleC/antlr/SimpleCParser";
-import { SimpleCAstBuilder } from "../languages/simpleC/builder";
-import { ErrorListener } from "../languages/simpleC/ErrorListener";
-import { AstNode } from "../languages/simpleC/nodes";
-import { simpleC } from "../languages/simpleC/simplec-lang";
+import { simpleC } from "../languages/simpleC/codemirror/simplec-lang";
 import { Decoration } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
 
@@ -20,6 +12,15 @@ import { ViewPlugin, DecorationSet, ViewUpdate } from "@codemirror/view";
 import { immerable } from "immer";
 import { breakpointEffect, breakpointGutter } from "./breakpoint";
 import { DocPosition } from "../utils/antlr";
+import { SimpleASMLexer } from "../languages/riv32asm/parser/antlr/SimpleASMLexer";
+import { SimpleASMParser } from "../languages/riv32asm/parser/antlr/SimpleASMParser";
+import { SimpleASMAstBuilder } from "../languages/riv32asm/parser/astBuilder";
+import { ASMRootNode } from "../languages/riv32asm/parser/astNodes";
+import { SimpleCLexer } from "../languages/simpleC/parser/antlr/SimpleCLexer";
+import { SimpleCParser } from "../languages/simpleC/parser/antlr/SimpleCParser";
+import { SimpleCAstBuilder } from "../languages/simpleC/parser/astBuilder";
+import { AstNode } from "../languages/simpleC/parser/astNodes";
+import { ErrorListener } from "../languages/simpleC/parser/ErrorListener";
 
 export interface HighlightRange extends DocPosition {
   col: string;

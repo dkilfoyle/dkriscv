@@ -3,10 +3,9 @@
 // {             imm[11:0]           } {     rs1    } {  f3  } {      rd    } {      opcode      }   I Type
 // {     imm[11:5]    } {     rs2    } {     rs1    } {  f3  } {  imm[4:0]  } {      opcode      }   S Type
 
-import { assert } from "console";
-import { DocPosition, getEmptyDocPosition } from "../../utils/antlr";
-import { getBits, maskBits, signedSlice, unsignedSlice } from "../../utils/bits";
-import { SymbolTable } from "./builder";
+import { DocPosition, getEmptyDocPosition } from "../../../utils/antlr";
+import { signedSlice, unsignedSlice, getBits, maskBits } from "../../../utils/bits";
+import { SymbolTable } from "./astBuilder";
 
 // Base opcodes.
 const OP_LOAD = 0x03;
@@ -41,12 +40,12 @@ const F3_XOR = 4;
 const F3_SR = 5;
 const F3_OR = 6;
 const F3_AND = 7;
-const F3_MRET = 0;
+// const F3_MRET = 0;
 
 // Funct7 opcodes.
 const F7_L = 0;
 const F7_A = 32;
-const F7_MRET = 24;
+// const F7_MRET = 24;
 
 const OPCODE_TO_FORMAT = {
   [OP_REG]: "R",

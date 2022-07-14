@@ -8,21 +8,21 @@ import {
   VariableSignature,
 } from "./signature";
 import { sprintf } from "sprintf-js";
-import { DocPosition, getEmptyDocPosition } from "../../utils/antlr";
+import { DocPosition, getEmptyDocPosition } from "../../../utils/antlr";
 
 export const errorNodes: AstNode[] = [];
 let globalReturnResult: string | number | boolean; // todo better method
 const globalAstScopeStack = new ScopeStack<Instance, void>();
 
-const debugging = true;
-const debug = (msg: string, res?: string | number | boolean) => {
-  if (debugging) console.log(msg, res ? res : "");
-};
+// const debugging = true;
+// const debug = (msg: string, res?: string | number | boolean) => {
+//   if (debugging) console.log(msg, res ? res : "");
+// };
 
 const getJavascriptType = (x: any) => {
-  if (typeof x == "number") return "int";
-  if (typeof x == "boolean") return "bool";
-  if (typeof x == "string") return "string";
+  if (typeof x === "number") return "int";
+  if (typeof x === "boolean") return "bool";
+  if (typeof x === "string") return "string";
   return "unknown";
 };
 
@@ -54,7 +54,7 @@ export class VariableInstance extends Instance {
     return this.value;
   }
   setValue(newValue: string | number | boolean) {
-    if (getJavascriptType(newValue) != this.type) throw new Error();
+    if (getJavascriptType(newValue) !== this.type) throw new Error();
     this.value = newValue;
   }
 }
@@ -63,9 +63,9 @@ export class ArrayInstance extends Instance {
   value;
   constructor(id: string, type: AllowedTypes, length: number) {
     super(id, type);
-    if (type == "int") this.value = new Array<number>(length);
-    else if (type == "bool") this.value = new Array<boolean>(length);
-    else if (type == "string") this.value = new Array<string>(length);
+    if (type === "int") this.value = new Array<number>(length);
+    else if (type === "bool") this.value = new Array<boolean>(length);
+    else if (type === "string") this.value = new Array<string>(length);
     else throw new Error();
   }
   getValue(index?: number) {
@@ -75,13 +75,13 @@ export class ArrayInstance extends Instance {
     } else return this.value;
   }
   setValue(newValue: string | number | boolean, index: number) {
-    if (getJavascriptType(newValue) != this.type) return new Error();
+    if (getJavascriptType(newValue) !== this.type) return new Error();
     if (index < 0 || index > this.value.length - 1) throw new Error();
     this.value[index] = newValue;
   }
 }
 
-// ================= base nodes
+// ========================= base nodes
 
 // class ExecuteResult {
 //   parent: AstNode;
@@ -113,7 +113,7 @@ export class AstNode {
   indent(n: number, s: string, nl: boolean = false) {
     return s
       .split("\n")
-      .filter((line) => line != "")
+      .filter((line) => line !== "")
       .map((line) => " ".repeat(n) + line)
       .join("\n");
   }
@@ -132,9 +132,6 @@ export class AstNode {
 }
 
 export class AstNull extends AstNode {
-  constructor() {
-    super();
-  }
   toString(indent = 0) {
     return this.indent(indent, "AstNull()");
   }
@@ -193,7 +190,7 @@ export class AstRepl extends AstNode {
   }
 }
 
-// ============= statement nodes
+// =================== statement nodes
 
 export class AstBlock extends AstNode {
   body: AstStatement[];
@@ -220,7 +217,7 @@ ${this.returnExpression ? "  return " + this.returnExpression.toString() : ""}
     globalAstScopeStack.enterScope("block");
     for (let i = 0; i < this.body.length; i++) {
       let res = this.body[i].execute();
-      if (res == "return") return "return";
+      if (res === "return") return "return";
     }
     const res = this.returnExpression ? this.returnExpression.execute() : "void";
     globalAstScopeStack.disposeScope();
@@ -281,19 +278,19 @@ export class AstFunctionCall extends AstStatement {
   }
   execute() {
     // debug(`AstFunctionCall(${this.funDecl.id})`)
-    if (this.funDecl.id == "assert") {
+    if (this.funDecl.id === "assert") {
       let res = this.params[0].execute();
       console.log(`assert(${this.params[0].toString()}) is ${res}`);
       // debug("AstFunctionCall result: ", res)
       return res;
-    } else if (this.funDecl.id == "printf") {
+    } else if (this.funDecl.id === "printf") {
       console.log("stdout: ", this.params[0].execute());
       return "void";
-    } else if (this.funDecl.id == "print") {
+    } else if (this.funDecl.id === "print") {
       console.log("stdout: ", this.params[0].execute(), this.params[1].execute());
       return "void";
     } else {
-      if (this.params.length != this.funDecl.params.length)
+      if (this.params.length !== this.funDecl.params.length)
         throw new Error("functional call parameter mismatch");
       globalAstScopeStack.enterScope(this.funDecl.id);
 
@@ -306,14 +303,14 @@ export class AstFunctionCall extends AstStatement {
       let res = this.funDecl.execute();
       globalAstScopeStack.disposeScope();
       // debug("--Result: ", res);
-      return res == "return" ? globalReturnResult : res;
+      return res === "return" ? globalReturnResult : res;
     }
   }
   // codegen() {
   //   const calleeF = module.getFunction(this.funDecl.id);
   //   if (!calleeF) throw new Error();
 
-  //   if (calleeF.arg_size() != this.funDecl.params.length) throw new Error();
+  //   if (calleeF.arg_size() !== this.funDecl.params.length) throw new Error();
 
   //   const args = this.funDecl.params.map(p => p.codegen());
   //   return builder.CreateCall(calleeF, args, "calltmp");
@@ -414,7 +411,7 @@ ${this.cases.map((c) => c.toString(2) + "\n").join("\n")}
     const lhs = this.switchExpression.execute();
     let didBreak = false;
     for (let i = 0; i < this.cases.length; i++) {
-      if (this.cases[i].caseConstant.execute() == lhs) {
+      if (this.cases[i].caseConstant.execute() === lhs) {
         this.cases[i].execute();
         if (this.cases[i].hasBreak) {
           didBreak = true;
@@ -537,7 +534,7 @@ export class AstPrintf extends AstStatement {
   }
 }
 
-// =============== Expression nodes
+// ====================== Expression nodes
 
 export class AstExpression extends AstNode {
   returnType() {
@@ -572,16 +569,16 @@ export class AstUnaryExpression extends AstExpression {
     return `${this.op}${this.rhs.toCode()}`;
   }
   returnType() {
-    if (this.op == "-") return "int";
-    if (this.op == "!") return "bool";
+    if (this.op === "-") return "int";
+    if (this.op === "!") return "bool";
     return "unknown";
   }
   execute() {
-    if (this.op == "-") {
+    if (this.op === "-") {
       const rhsRes = Number(this.rhs.execute());
       return rhsRes * -1;
     }
-    if (this.op == "!") {
+    if (this.op === "!") {
       const rhsRes = Boolean(this.rhs.execute());
       return !rhsRes;
     }
@@ -607,7 +604,7 @@ export class AstBinaryExpression extends AstExpression {
   }
   returnType() {
     if (["+", "-", "*", "/", "%", "^"].includes(this.op)) return "int"; // TODO - should check type of LHS and RHS to see if int or float
-    if (["<=", "<", ">=", ">", "==", "!=", "&&", "||"].includes(this.op)) return "bool";
+    if (["<=", "<", ">=", ">", "===", "!==", "&&", "||"].includes(this.op)) return "bool";
     return "unknown";
   }
   execute() {
@@ -634,10 +631,10 @@ export class AstBinaryExpression extends AstExpression {
         return lhsRes <= rhsRes;
       case ">=":
         return lhsRes >= rhsRes;
-      case "==":
-        return lhsRes == rhsRes;
-      case "!=":
-        return lhsRes != rhsRes;
+      case "===":
+        return lhsRes === rhsRes;
+      case "!==":
+        return lhsRes !== rhsRes;
       case "&&":
         return Boolean(lhsRes && rhsRes);
       case "||":
@@ -773,7 +770,7 @@ export class AstBracketExpression extends AstExpression {
   }
 }
 
-// ==================== Named declarations (on stack)
+// ============================== Named declarations (on stack)
 
 export abstract class AstIdentifierDeclaration extends AstNode {
   id: string;
@@ -887,9 +884,6 @@ ${this.body ? this.body.toString(2) : "  StdLib"}
 }
 
 export class AstUndeclaredError extends AstIdentifierDeclaration {
-  constructor(ctx: ParserRuleContext, id: string) {
-    super(ctx, id);
-  }
   getInstance() {
     return new ErrorInstance();
   }

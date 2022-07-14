@@ -1,7 +1,7 @@
 import { HStack, Spacer, Table, TableContainer, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
 import { useContext } from "react";
 import { ComputerContext } from "../../App";
-import { registerNames } from "../../assemblers/riscv/builder";
+import { registerNames } from "../../languages/riv32asm/parser/astBuilder";
 import { useFormat } from "../../utils/useFormat";
 
 export const Regs = () => {

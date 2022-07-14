@@ -1,17 +1,17 @@
 import React, { useEffect, useReducer, useState } from "react";
 import "react-reflex/styles.css";
-import { ASMRootNode } from "./assemblers/riscv/builder";
 import { CodeEditor, CodeHighlightInfo, RangeMap } from "./ui/CodeEditor";
 import { ASMGenerator } from "./compilers/riscv/ASMGenerator";
-import { AstNode } from "./languages/simpleC/nodes";
 import { MCGenerator } from "./assemblers/riscv/MCGenerator";
 import { Computer } from "./simulator/System";
-import { Instruction } from "./assemblers/riscv/Instruction";
 import "./app.css";
 import produce from "immer";
 import { ChakraProvider, theme, Box } from "@chakra-ui/react";
 import { ReflexContainer, ReflexElement, ReflexSplitter } from "react-reflex";
 import { Schematic } from "./ui/schematic/schematic";
+import { ASMRootNode } from "./languages/riv32asm/parser/astNodes";
+import { Instruction } from "./languages/riv32asm/parser/Instruction";
+import { AstNode } from "./languages/simpleC/parser/astNodes";
 
 const codeFile = require("./languages/simpleC/examples/fib.tc");
 const compiler = new ASMGenerator();

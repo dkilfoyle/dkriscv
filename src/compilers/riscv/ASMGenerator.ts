@@ -16,8 +16,8 @@ import {
   AstVariableDeclaration,
   AstVariableExpression,
   AstWhile,
-} from "../../languages/simpleC/nodes";
-import { Scope, ScopeStack } from "../../languages/simpleC/scopeStack";
+} from "../../languages/simpleC/parser/astNodes";
+import { Scope, ScopeStack } from "../../languages/simpleC/parser/scopeStack";
 import { RangeMap } from "../../ui/CodeEditor";
 import { R, RiscvEmmiter } from "./emitter";
 

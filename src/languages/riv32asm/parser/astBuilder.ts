@@ -15,10 +15,11 @@ import {
   UtypeContext,
 } from "./antlr/SimpleASMParser";
 import { SimpleASMVisitor } from "./antlr/SimpleASMVisitor";
-import { getBits } from "../../utils/bits";
+import { getBits } from "../../../utils/bits";
 import { Instruction } from "./Instruction";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
-import { DocPosition } from "../../utils/antlr";
+import { DocPosition } from "../../../utils/antlr";
+import { ASMRootNode, DataSection } from "./astNodes";
 
 export const registerNumbers = {
   zero: 0,
@@ -115,42 +116,6 @@ const pseudos = {
 }
 
 export type SymbolTable = { [index: string]: number };
-
-export class DataSection {
-  data!: Uint8Array;
-  pointer!: number;
-  constructor() {
-    this.reset();
-  }
-  reset() {
-    this.data = new Uint8Array(1024);
-    this.pointer = 0;
-  }
-  pushByte(x: number) {
-    this.data[this.pointer++] = x & 0xff;
-  }
-  pushString(x: string) {
-    for (let i = 0; i < x.length; i++) {
-      this.pushByte(x.charCodeAt(i));
-    }
-  }
-  pushWord(x: number) {
-    this.pushByte(x);
-    this.pushByte(x >> 8);
-    this.pushByte(x >> 16);
-    this.pushByte(x >> 24);
-  }
-  getBytes() {
-    return this.data.slice(0, this.pointer);
-  }
-}
-
-export interface ASMRootNode {
-  instructions: Instruction[];
-  symbols: SymbolTable;
-  labels: SymbolTable;
-  dataSection: DataSection;
-}
 
 export class SimpleASMAstBuilder
   extends AbstractParseTreeVisitor<ASMRootNode>

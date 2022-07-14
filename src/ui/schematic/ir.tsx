@@ -15,7 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { useContext } from "react";
 import { ComputerContext } from "../../App";
-import { instructionFields, instructionFormats } from "../../assemblers/riscv/Instruction";
+import { instructionFormats, instructionFields } from "../../languages/riv32asm/parser/Instruction";
 import { unsignedSlice } from "../../utils/bits";
 import { useFormat } from "../../utils/useFormat";
 import "./schematic.css";
@@ -92,9 +92,9 @@ export const IR = () => {
                     aria-label={""}
                   />
                 </ButtonGroup>
-                <span>
+                <h2>
                   IR = 0x{(ir.machineCode >>> 0).toString(16)} ({ir.iType})
-                </span>
+                </h2>
                 <Spacer></Spacer>
                 <FormatSelector />
               </HStack>

@@ -58,7 +58,7 @@ import {
   AstVariableDeclaration,
   AstVariableExpression,
   AstWhile,
-} from "./nodes";
+} from "./astNodes";
 import { ScopeStack } from "./scopeStack";
 import { AllowedTypes } from "./signature";
 

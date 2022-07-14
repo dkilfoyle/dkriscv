@@ -1,6 +1,7 @@
+import { SymbolTable } from "../../languages/riv32asm/parser/astBuilder";
+import { DataSection, ASMRootNode } from "../../languages/riv32asm/parser/astNodes";
+import { Instruction } from "../../languages/riv32asm/parser/Instruction";
 import { RangeMap } from "../../ui/CodeEditor";
-import { ASMRootNode, DataSection, SymbolTable } from "./builder";
-import { Instruction } from "./Instruction";
 
 export class MCGenerator {
   instructions: Instruction[];
