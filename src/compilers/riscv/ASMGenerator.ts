@@ -109,6 +109,7 @@ export class ASMGenerator {
   scopeStack: LocalScopeStack;
   dataSection: GlobalVar[];
   rangeMap: RangeMap;
+  src: string;
 
   constructor() {
     this.emitter = new RiscvEmmiter();
@@ -143,9 +144,10 @@ export class ASMGenerator {
     this.emitter.emitLW(R.A0, R.SP, 0, comment);
   }
 
-  codegen(root: AstNode) {
+  codegen(root: AstNode, src: string) {
     if (!(root instanceof AstRepl)) throw new Error();
     this.reset();
+    this.src = src;
 
     this.emitter.startCode();
     this.emitter.emitGlobalLabel("main");
@@ -183,7 +185,7 @@ export class ASMGenerator {
       return;
     }
 
-    const asmStart = this.emitter.out.length;
+    const asmFunctionStartLine = this.emitter.nextLine;
 
     // add a new scope for the function. SP starts at -2*WORD_SIZE to accomodate saved FP and RA
     const scope = this.scopeStack.enterFunction(node.id);
@@ -210,10 +212,12 @@ export class ASMGenerator {
     this.emitter.emitSW(R.RA, R.SP, WORD_SIZE, "Save caller's RA");
     this.emitter.emitADDI(R.FP, R.SP, 2 * WORD_SIZE, "New FP is at old SP");
 
+    const asmBodyStartLine = this.emitter.nextLine;
     this.emitter.emitComment(`${node.id} body`);
     this.visitBlock(node.body, `${node.id} body`, scope);
-    this.emitter.emitComment(`${node.id} epilogue`);
 
+    const asmEpilogStartLine = this.emitter.nextLine;
+    this.emitter.emitComment(`${node.id} epilogue`);
     if (node.id === "main") {
       this.emitter.emitLI(R.A0, 10, "Set A0 to 10 for exit ecall");
       this.emitter.emitECALL();
@@ -226,10 +230,54 @@ export class ASMGenerator {
       this.emitter.emitJR(R.RA, "jump back to caller (RA)");
     }
 
-    this.rangeMap.push({
-      left: { startPos: node.pos[0], endPos: node.pos[1], col: "#d4fafa" },
-      right: { startPos: asmStart, endPos: this.emitter.out.length, col: "#d4fafa" },
-    });
+    this.rangeMap.push(
+      ...[
+        {
+          // prolog
+          left: {
+            startLine: node.pos.startLine,
+            endLine: node.body.pos.startLine - 1,
+            col: "red",
+          },
+          right: { startLine: asmFunctionStartLine, endLine: asmBodyStartLine - 1, col: "red" },
+          name: `${node.id}_prolog`,
+        },
+        {
+          // body
+          left: {
+            startLine: node.body.pos.startLine,
+            endLine: node.body.pos.endLine,
+            col: "red",
+          },
+          right: {
+            startLine: asmBodyStartLine,
+            endLine: asmEpilogStartLine - 1,
+            col: "red",
+          },
+          name: `${node.id}_body`,
+        },
+        {
+          //epilog
+          left: { startLine: node.body.pos.endLine + 1, endLine: node.pos.endLine, col: "green" },
+          right: {
+            startLine: asmEpilogStartLine,
+            endLine: this.emitter.nextLine - 1,
+            col: "green",
+          },
+          name: `${node.id}_epilog`,
+        },
+        {
+          //full function
+          left: { startLine: node.pos.startLine, endLine: node.pos.endLine, col: "#d4fafa" },
+          right: {
+            startLine: asmFunctionStartLine,
+            endLine: this.emitter.nextLine - 1,
+            col: "#d4fafa",
+          },
+          name: `${node.id}_func`,
+        },
+      ]
+    );
   }
 
   // =================================================================================================================

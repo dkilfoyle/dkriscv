@@ -7,7 +7,6 @@ import { AstNode } from "./languages/simpleC/nodes";
 import { MCGenerator } from "./assemblers/riscv/MCGenerator";
 import { Computer } from "./simulator/System";
 import { Instruction } from "./assemblers/riscv/Instruction";
-import { StateEffect } from "@codemirror/state";
 import "./app.css";
 import produce from "immer";
 import { ChakraProvider, theme, Box } from "@chakra-ui/react";
@@ -28,13 +27,11 @@ const computer = new Computer();
 export const App = () => {
   const [code, setCode] = useState("");
   const [asm, setAsm] = useState("");
-  const [memory, setMemory] = useState([]);
 
   const [instructions, setInstructions] = useState<Instruction[]>([]);
 
-  const [asmPos, setAsmPos] = useState(0);
-  const [codePos, setCodePos] = useState(0);
-  const [memPos, setMemPos] = useState(0);
+  const [asmLinePos, setAsmLinePos] = useState(0);
+  const [codeLinePos, setCodeLinePos] = useState(0);
 
   const [breakpoints, setBreakpoints] = useState([]);
 
@@ -51,7 +48,7 @@ export const App = () => {
   ) => {
     const end = criteria.end || criteria.start;
     return rangeMap.find(
-      (x) => criteria.start >= x[criteria.side].startPos && end <= x[criteria.side].endPos
+      (x) => criteria.start >= x[criteria.side].startLine && end <= x[criteria.side].endLine
     );
   };
 
@@ -64,7 +61,7 @@ export const App = () => {
   });
 
   const updateCAst = (ast: AstNode) => {
-    const { code: asm, rangeMap } = compiler.codegen(ast);
+    const { code: asm, rangeMap } = compiler.codegen(ast, code);
     setAsm(asm);
     setCodeAsmRangeMap(rangeMap);
   };
@@ -85,7 +82,7 @@ export const App = () => {
 
   const updateAsmBreakpoints = (pos: number, on: boolean) => {
     const match =
-      findRangeMap(asmMachineCodeRangeMap, { start: pos, side: "left" }).right.startPos * 4;
+      findRangeMap(asmMachineCodeRangeMap, { start: pos, side: "left" }).right.startLine * 4;
 
     if (on === false) {
       setBreakpoints([...breakpoints.filter((x) => x !== match)]);
@@ -95,12 +92,12 @@ export const App = () => {
   function setRanges(matches) {
     setCodeRange(
       produce((draft) => {
-        draft.code = matches.map((m) => ({ ...m.left, col: "#d4fafa" }));
+        draft.code = matches.map((m) => ({ ...m.left })); //, col: "#d4fafa" }));
       })
     );
     setAsmRange(
       produce((draft) => {
-        draft.code = matches.map((m) => ({ ...m.right, col: "#d4fafa" }));
+        draft.code = matches.map((m) => ({ ...m.right })); //, col: "#d4fafa" }));
       })
     );
   }
@@ -109,31 +106,31 @@ export const App = () => {
   useEffect(() => {
     // find the rangemap entry for the current asm position
     const matches = codeAsmRangeMap
-      .slice()
-      .reverse()
-      .filter((x) => asmPos >= x.right.startPos && asmPos <= x.right.endPos);
+      // .slice()
+      // .reverse()
+      .filter((x) => asmLinePos >= x.right.startLine && asmLinePos <= x.right.endLine);
     setRanges(matches);
-  }, [asmPos, codeAsmRangeMap]);
+  }, [asmLinePos, codeAsmRangeMap]);
 
   useEffect(() => {
     // find the rangemap entry for the current asm position
     const matches = codeAsmRangeMap
-      .slice()
-      .reverse()
-      .filter((x) => codePos >= x.left.startPos && codePos <= x.left.endPos);
+      // .slice()
+      // .reverse()
+      .filter((x) => codeLinePos >= x.left.startLine && codeLinePos <= x.left.endLine);
     setRanges(matches);
-  }, [codePos, codeAsmRangeMap]);
+  }, [codeLinePos, codeAsmRangeMap]);
 
   useEffect(() => {
     // find the rangemap entry for the current asm position
     const codeRange = asmMachineCodeRangeMap
-      .slice()
-      .reverse()
-      .find((x) => asmPos >= x.left.startPos && asmPos <= x.left.endPos);
+      // .slice()
+      // .reverse()
+      .find((x) => asmLinePos >= x.left.startLine && asmLinePos <= x.left.endLine);
     if (codeRange) {
       // setMemRange((arr) => [...arr, codeRange.right]);
     }
-  }, [asmPos, asmMachineCodeRangeMap]);
+  }, [asmLinePos, asmMachineCodeRangeMap]);
 
   useEffect(() => {
     const i = instructions[computer.cpu.pcLast / 4];
@@ -143,20 +140,19 @@ export const App = () => {
       setCodeRange(
         produce((draft) => {
           const codeRange = codeAsmRangeMap
-            .slice()
-            .reverse()
-            .find((x) => i.pos[0] >= x.right.startPos && i.pos[0] <= x.right.endPos);
+            // .slice()
+            // .reverse()
+            .find((x) => i.pos.startLine >= x.right.startLine && i.pos.endLine <= x.right.endLine);
           if (codeRange) {
             draft.pc = {
-              startPos: codeRange.left.startPos,
-              endPos: codeRange.left.endPos,
+              ...codeRange.left,
               col: "#ede7f6",
             };
           } else {
             debugger;
             draft.pc = {
-              startPos: 0,
-              endPos: 0,
+              startLine: 0,
+              endLine: 0,
               col: "red",
             };
           }
@@ -165,7 +161,7 @@ export const App = () => {
 
       setAsmRange(
         produce((draft) => {
-          draft.pc = { startPos: i.pos[0], endPos: i.pos[1], col: "#ede7f6" };
+          draft.pc = { ...i.pos, col: "#ede7f6" };
         })
       );
     }
@@ -183,7 +179,7 @@ export const App = () => {
                 code={code}
                 lang="simpleC"
                 updateAst={updateCAst}
-                updatePos={setCodePos}
+                updatePos={setCodeLinePos}
                 highlightRanges={codeRange}></CodeEditor>
             </ReflexElement>
 
@@ -194,7 +190,7 @@ export const App = () => {
                 code={asm}
                 lang="simpleASM"
                 updateAst={updateAsmAst}
-                updatePos={setAsmPos}
+                updatePos={setAsmLinePos}
                 updateBreakpoints={updateAsmBreakpoints}
                 highlightRanges={asmRange}></CodeEditor>
             </ReflexElement>

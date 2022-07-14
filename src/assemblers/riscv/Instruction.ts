@@ -4,6 +4,7 @@
 // {     imm[11:5]    } {     rs2    } {     rs1    } {  f3  } {  imm[4:0]  } {      opcode      }   S Type
 
 import { assert } from "console";
+import { DocPosition, getEmptyDocPosition } from "../../utils/antlr";
 import { getBits, maskBits, signedSlice, unsignedSlice } from "../../utils/bits";
 import { SymbolTable } from "./builder";
 
@@ -208,10 +209,10 @@ export class Instruction {
   iType: InstructionType;
   opName: string;
   params: InstructionParameters;
-  pos: [number, number]; // start, stop in asm code
+  pos: DocPosition; // start, stop in asm code
   machineCode: number;
 
-  constructor(opName: string, params: InstructionParameters, pos: [number, number]) {
+  constructor(opName: string, params: InstructionParameters, pos: DocPosition) {
     this.iType = OPCODE_TO_FORMAT[operations[opName][0]];
     this.opName = opName;
     this.params = params;
@@ -316,7 +317,11 @@ export class Instruction {
     const opName = tree as unknown as string;
     const format = OPCODE_TO_FORMAT[fields.opcode];
 
-    const result = new Instruction(opName, { ...fields, imm: decodeImmediate(fields, format, x) }, [0, 0]);
+    const result = new Instruction(
+      opName,
+      { ...fields, imm: decodeImmediate(fields, format, x) },
+      getEmptyDocPosition()
+    );
     result.machineCode = x;
     return result;
   }
@@ -330,7 +335,14 @@ export class Instruction {
     let slice = unsignedSlice;
     switch (this.iType) {
       case "R":
-        return [slice(x, 31, 25), slice(x, 24, 20), slice(x, 19, 15), slice(x, 14, 12), slice(x, 11, 7), slice(x, 6, 0)];
+        return [
+          slice(x, 31, 25),
+          slice(x, 24, 20),
+          slice(x, 19, 15),
+          slice(x, 14, 12),
+          slice(x, 11, 7),
+          slice(x, 6, 0),
+        ];
     }
   }
 
@@ -367,7 +379,13 @@ export class Instruction {
         );
       case "J":
       case "U":
-        return xs.slice(31 - 31, 31 - 12 + 1) + "_" + xs.slice(31 - 11, 31 - 7 + 1) + "_" + xs.slice(31 - 6, 31 - 0 + 1);
+        return (
+          xs.slice(31 - 31, 31 - 12 + 1) +
+          "_" +
+          xs.slice(31 - 11, 31 - 7 + 1) +
+          "_" +
+          xs.slice(31 - 6, 31 - 0 + 1)
+        );
       default:
         throw new Error();
     }

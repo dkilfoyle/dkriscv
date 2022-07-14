@@ -18,6 +18,7 @@ import { SimpleASMVisitor } from "./antlr/SimpleASMVisitor";
 import { getBits } from "../../utils/bits";
 import { Instruction } from "./Instruction";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
+import { DocPosition } from "../../utils/antlr";
 
 export const registerNumbers = {
   zero: 0,
@@ -195,9 +196,17 @@ export class SimpleASMAstBuilder
     this.labels[label] = this.instructions.length * 4;
   }
 
-  getPos(ctx: ParserRuleContext): [number, number] {
-    // return [ctx.start.line, ctx.start.charPositionInLine];
-    return [ctx.start.startIndex, ctx.stop.stopIndex];
+  getPos(ctx: ParserRuleContext): DocPosition {
+    return {
+      startLine: ctx.start.line,
+      startCol: ctx.start.charPositionInLine,
+      endLine: ctx.stop.line,
+      endCol: ctx.stop.charPositionInLine,
+      startAntlrPos: ctx.start.startIndex,
+      endAntlrPos: ctx.stop.stopIndex,
+      startCMPos: -1,
+      endCMPos: -1,
+    };
   }
 
   visitData(ctx: DataContext) {

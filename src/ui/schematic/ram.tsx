@@ -9,8 +9,8 @@ export const Ram = (props: { highlightRanges?: CodeHighlightInfo }) => {
   const style = (i) => {
     if (i * 4 === computer.cpu.pcLast) return { background: "#A5D6A7" };
     if (props.highlightRanges.code) {
-      for (let { startPos, endPos, col } of props.highlightRanges.code) {
-        if (i >= startPos && i <= endPos) return { backgroundColor: col };
+      for (let { startLine, endLine, col } of props.highlightRanges.code) {
+        if (i >= startLine && i <= endLine) return { backgroundColor: col };
       }
     }
 

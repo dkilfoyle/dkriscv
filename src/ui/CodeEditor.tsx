@@ -19,12 +19,16 @@ import { RangeSetBuilder } from "@codemirror/state";
 import { ViewPlugin, DecorationSet, ViewUpdate } from "@codemirror/view";
 import { immerable } from "immer";
 import { breakpointEffect, breakpointGutter } from "./breakpoint";
+import { DocPosition } from "../utils/antlr";
 
-export type HighlightRange = { startPos: number; endPos: number; col: string };
+export interface HighlightRange extends DocPosition {
+  col: string;
+}
 
 export interface RangeMapEntry {
   left: HighlightRange;
   right: HighlightRange;
+  name?: string;
 }
 export type RangeMap = RangeMapEntry[];
 
@@ -33,7 +37,7 @@ export class CodeHighlightInfo {
   pc: HighlightRange;
   code: HighlightRange[];
   constructor() {
-    this.pc = { startPos: 0, endPos: 0, col: "transpartent" };
+    this.pc = { startLine: 0, endLine: 0, col: "transpartent" };
     this.code = [];
   }
   toArray() {
@@ -104,10 +108,17 @@ export const CodeEditor = (props: {
 
   useEffect(() => {
     if (cmCodeRef.current.view && cmCodeRef.current.state) {
-      const { view } = cmCodeRef.current;
-      view.dispatch({
-        effects: EditorView.scrollIntoView(props.highlightRanges.pc.startPos, { y: "center" }),
-      });
+      const { view, state } = cmCodeRef.current;
+      if (
+        props.highlightRanges.pc.startLine &&
+        props.highlightRanges.pc.startLine < state.doc.lines
+      )
+        view.dispatch({
+          effects: EditorView.scrollIntoView(
+            state.doc.line(props.highlightRanges.pc.startLine).from,
+            { y: "center" }
+          ),
+        });
     }
   }, [props.highlightRanges.pc]);
 
@@ -120,10 +131,10 @@ export const CodeEditor = (props: {
       for (let { from, to } of view.visibleRanges) {
         for (let pos = from; pos <= to; ) {
           let line = view.state.doc.lineAt(pos);
-          for (let { startPos, endPos, col } of ranges) {
-            let highlightStartLine = view.state.doc.lineAt(startPos).number;
-            let highlightEndLine = view.state.doc.lineAt(endPos).number;
-            if (line.number >= highlightStartLine && line.number <= highlightEndLine)
+          for (let { startLine, endLine, col } of ranges) {
+            // let highlightStartLine = view.state.doc.lineAt(startPos).number;
+            // let highlightEndLine = view.state.doc.lineAt(endPos).number;
+            if (line.number >= startLine && line.number <= endLine)
               builder.add(line.from, line.from, stripe(col));
           }
           pos = line.to + 1;
@@ -172,12 +183,13 @@ export const CodeEditor = (props: {
       }}
       onUpdate={(viewUpdate) => {
         if (viewUpdate.selectionSet) {
-          props.updatePos(viewUpdate.transactions[0]?.selection.ranges[0].from);
+          const pos = viewUpdate.transactions[0]?.selection.ranges[0].from;
+          props.updatePos(viewUpdate.state.doc.lineAt(pos).number);
         } else if (viewUpdate.transactions.length && viewUpdate.transactions[0].effects.length) {
           const effect = viewUpdate.transactions[0].effects[0];
           if (effect.is(breakpointEffect)) {
             props?.updateBreakpoints(
-              effect.value.pos + viewUpdate.state.doc.lineAt(effect.value.pos).text.search(/\S/), // value.pos is start of line so add any leading whitespace to searchpos
+              viewUpdate.state.doc.lineAt(effect.value.pos).number,
               effect.value.on
             );
           }

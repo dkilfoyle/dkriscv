@@ -1,7 +1,14 @@
 import { ParserRuleContext } from "antlr4ts";
 import { ScopeStack } from "./scopeStack";
-import { AllowedTypes, ArraySignature, FunctionSignature, Signature, VariableSignature } from "./signature";
+import {
+  AllowedTypes,
+  ArraySignature,
+  FunctionSignature,
+  Signature,
+  VariableSignature,
+} from "./signature";
 import { sprintf } from "sprintf-js";
+import { DocPosition, getEmptyDocPosition } from "../../utils/antlr";
 
 export const errorNodes: AstNode[] = [];
 let globalReturnResult: string | number | boolean; // todo better method
@@ -88,15 +95,19 @@ export class ArrayInstance extends Instance {
 // }
 
 export class AstNode {
-  location: [number, number, number, number];
-  pos: [number, number];
+  pos: DocPosition;
   constructor(ctx?: ParserRuleContext) {
     if (ctx) {
-      this.location = [ctx.start.line, ctx.start.charPositionInLine, ctx.stop.line, ctx.stop.charPositionInLine];
-      this.pos = [ctx.start.startIndex, ctx.stop.stopIndex];
+      this.pos = {
+        startLine: ctx.start.line,
+        startCol: ctx.start.charPositionInLine,
+        endLine: ctx.stop.line,
+        endCol: ctx.stop.charPositionInLine,
+        startAntlrPos: ctx.start.startIndex,
+        endAntlrPos: ctx.stop.stopIndex,
+      };
     } else {
-      this.location = [0, 0, 0, 0];
-      this.pos = [0, 0];
+      this.pos = getEmptyDocPosition();
     }
   }
   indent(n: number, s: string, nl: boolean = false) {
@@ -161,7 +172,11 @@ export class AstRepl extends AstNode {
     this.functions = functions;
   }
   toString() {
-    return this.functions.map((funct) => funct.toString()).join("\n") + "\n" + this.getMainFunction().body.toString();
+    return (
+      this.functions.map((funct) => funct.toString()).join("\n") +
+      "\n" +
+      this.getMainFunction().body.toString()
+    );
   }
   toCode() {
     return "repl.toCode unimplemented";
@@ -219,13 +234,20 @@ export class AstStatement extends AstNode {}
 export class AstAssignment extends AstStatement {
   lhsVariable: AstVariableExpression;
   rhsExpression: AstExpression;
-  constructor(ctx: ParserRuleContext, lhsVariable: AstVariableExpression, rhsExpression: AstExpression) {
+  constructor(
+    ctx: ParserRuleContext,
+    lhsVariable: AstVariableExpression,
+    rhsExpression: AstExpression
+  ) {
     super(ctx);
     this.lhsVariable = lhsVariable;
     this.rhsExpression = rhsExpression;
   }
   toString(indent: number) {
-    return this.indent(indent, `Assignment(${this.lhsVariable.toString()} = ${this.rhsExpression.toString()})`);
+    return this.indent(
+      indent,
+      `Assignment(${this.lhsVariable.toString()} = ${this.rhsExpression.toString()})`
+    );
   }
   toCode() {
     return `${this.lhsVariable.toCode()} = ${this.rhsExpression.toCode()}`;
@@ -246,7 +268,10 @@ export class AstFunctionCall extends AstStatement {
     this.params = params;
   }
   toString(indent = 0) {
-    return this.indent(indent, `Call(${this.funDecl.id}, ${this.params.map((param) => param.toString()).join(",")})`);
+    return this.indent(
+      indent,
+      `Call(${this.funDecl.id}, ${this.params.map((param) => param.toString()).join(",")})`
+    );
   }
   toCode() {
     return `${this.funDecl.id}(${this.params.map((param) => param.toCode()).join(",")})`;
@@ -268,7 +293,8 @@ export class AstFunctionCall extends AstStatement {
       console.log("stdout: ", this.params[0].execute(), this.params[1].execute());
       return "void";
     } else {
-      if (this.params.length != this.funDecl.params.length) throw new Error("functional call parameter mismatch");
+      if (this.params.length != this.funDecl.params.length)
+        throw new Error("functional call parameter mismatch");
       globalAstScopeStack.enterScope(this.funDecl.id);
 
       this.funDecl.params.forEach((funDeclParam, i) => {
@@ -298,7 +324,12 @@ export class AstIf extends AstStatement {
   ifExpression: AstExpression;
   thenBlock: AstStatement;
   elseBlock: AstStatement;
-  constructor(ctx: ParserRuleContext, ifExpression: AstExpression, thenBlock: AstStatement, elseBlock?: AstStatement) {
+  constructor(
+    ctx: ParserRuleContext,
+    ifExpression: AstExpression,
+    thenBlock: AstStatement,
+    elseBlock?: AstStatement
+  ) {
     super(ctx);
     this.ifExpression = ifExpression;
     this.thenBlock = thenBlock;
@@ -325,14 +356,22 @@ export class AstCase extends AstNode {
   caseConstant: AstConstExpression;
   statements: AstBlock;
   hasBreak: boolean;
-  constructor(ctx: ParserRuleContext, caseConstant: AstConstExpression, statements: AstBlock, hasBreak: boolean) {
+  constructor(
+    ctx: ParserRuleContext,
+    caseConstant: AstConstExpression,
+    statements: AstBlock,
+    hasBreak: boolean
+  ) {
     super(ctx);
     this.caseConstant = caseConstant;
     this.statements = statements;
     this.hasBreak = hasBreak;
   }
   toString(indent = 0) {
-    return this.indent(indent, `case ${this.caseConstant.toString()} : ${this.statements.toString()}`);
+    return this.indent(
+      indent,
+      `case ${this.caseConstant.toString()} : ${this.statements.toString()}`
+    );
   }
   toCode() {
     return "";
@@ -347,7 +386,12 @@ export class AstSwitch extends AstStatement {
   switchExpression: AstExpression;
   cases: AstCase[];
   defaultStatements: AstBlock;
-  constructor(ctx: ParserRuleContext, switchExpression: AstExpression, cases: AstCase[], defaultStatements?: AstBlock) {
+  constructor(
+    ctx: ParserRuleContext,
+    switchExpression: AstExpression,
+    cases: AstCase[],
+    defaultStatements?: AstBlock
+  ) {
     super(ctx);
     this.switchExpression = switchExpression;
     this.cases = cases;
@@ -474,7 +518,10 @@ export class AstPrintf extends AstStatement {
     this.args = args;
   }
   toString(indent = 0) {
-    return this.indent(indent, `printf("${this.format}", ${this.args.map((arg) => arg.toString()).join(",")}`);
+    return this.indent(
+      indent,
+      `printf("${this.format}", ${this.args.map((arg) => arg.toString()).join(",")}`
+    );
   }
   toCode() {
     return `printf("${this.format}", ${this.args.map((arg) => arg.toString()).join(",")}`;
@@ -605,14 +652,22 @@ export class AstTernaryExpression extends AstExpression {
   ifE: AstExpression;
   thenE: AstExpression;
   elseE: AstExpression;
-  constructor(ctx: ParserRuleContext, ifE: AstExpression, thenE: AstExpression, elseE: AstExpression) {
+  constructor(
+    ctx: ParserRuleContext,
+    ifE: AstExpression,
+    thenE: AstExpression,
+    elseE: AstExpression
+  ) {
     super(ctx);
     this.ifE = ifE;
     this.thenE = thenE;
     this.elseE = elseE;
   }
   toString(indent: number = 0) {
-    return this.indent(indent, `?(${this.ifE.toString()} ? ${this.thenE.toString()} : ${this.elseE.toString()})`);
+    return this.indent(
+      indent,
+      `?(${this.ifE.toString()} ? ${this.thenE.toString()} : ${this.elseE.toString()})`
+    );
   }
   toCode() {
     return `?(${this.ifE.toCode()} ? ${this.thenE.toCode()} : ${this.elseE.toCode()})`;
@@ -629,7 +684,11 @@ export class AstTernaryExpression extends AstExpression {
 export class AstConstExpression extends AstExpression {
   value;
   valueType;
-  constructor(ctx: ParserRuleContext, value: number | boolean | string | null, valueType: "int" | "bool" | "string" | "null") {
+  constructor(
+    ctx: ParserRuleContext,
+    value: number | boolean | string | null,
+    valueType: "int" | "bool" | "string" | "null"
+  ) {
     super(ctx);
     this.value = value;
     this.valueType = valueType;
@@ -651,10 +710,15 @@ export class AstConstExpression extends AstExpression {
 export class AstVariableExpression extends AstExpression {
   declaration: AstIdentifierDeclaration;
   indexExpressions: AstExpression[];
-  constructor(ctx: ParserRuleContext, declaration: AstIdentifierDeclaration, indexExpressions?: AstExpression[]) {
+  constructor(
+    ctx: ParserRuleContext,
+    declaration: AstIdentifierDeclaration,
+    indexExpressions?: AstExpression[]
+  ) {
     super(ctx);
     this.declaration = declaration;
-    if (indexExpressions && !(declaration instanceof AstArrayDeclaration)) throw new Error("indexing variable that is not an array");
+    if (indexExpressions && !(declaration instanceof AstArrayDeclaration))
+      throw new Error("indexing variable that is not an array");
     this.indexExpressions = indexExpressions;
   }
   getIndexString() {
@@ -673,7 +737,8 @@ export class AstVariableExpression extends AstExpression {
     if (this.indexExpressions) {
       const arrayIndexes = this.indexExpressions.map((x, i) => {
         const xn = Number(x.execute());
-        if (xn < 0 || xn >= this.declaration.signature.dimensions[i]) throw new Error("array index out of bounds");
+        if (xn < 0 || xn >= this.declaration.signature.dimensions[i])
+          throw new Error("array index out of bounds");
         return xn;
       });
       return arrayIndexes;
@@ -685,7 +750,8 @@ export class AstVariableExpression extends AstExpression {
     } else this.declaration.getInstance().setValue(newValue);
   }
   execute() {
-    if (this.indexExpressions) return this.declaration.getInstance().getValue(this.getIndexValues()[0]);
+    if (this.indexExpressions)
+      return this.declaration.getInstance().getValue(this.getIndexValues()[0]);
     else return this.declaration.getInstance().getValue();
   }
 }
@@ -723,7 +789,12 @@ export abstract class AstIdentifierDeclaration extends AstNode {
 export class AstVariableDeclaration extends AstIdentifierDeclaration {
   initialExpression: AstExpression;
   signature: VariableSignature;
-  constructor(ctx: ParserRuleContext, id: string, type: AllowedTypes, initialExpression?: AstExpression) {
+  constructor(
+    ctx: ParserRuleContext,
+    id: string,
+    type: AllowedTypes,
+    initialExpression?: AstExpression
+  ) {
     super(ctx, id);
     this.signature = new VariableSignature(type);
     this.initialExpression = initialExpression;
@@ -742,7 +813,10 @@ export class AstVariableDeclaration extends AstIdentifierDeclaration {
   }
   execute() {
     // push an instance of this variable onto the stack
-    globalAstScopeStack.newSymbol(this.id, new VariableInstance(this.id, this.signature.returnType, this.initialExpression?.execute()));
+    globalAstScopeStack.newSymbol(
+      this.id,
+      new VariableInstance(this.id, this.signature.returnType, this.initialExpression?.execute())
+    );
     return "void";
   }
 }
@@ -754,7 +828,12 @@ export class AstArrayDeclaration extends AstIdentifierDeclaration {
     this.signature = new ArraySignature(type, dimensions);
   }
   toString(indent: number = 0) {
-    return this.indent(indent, `ArrayDeclaration(${this.signature.returnType}[${this.signature.dimensions.join(":")}]: ${this.id})`);
+    return this.indent(
+      indent,
+      `ArrayDeclaration(${this.signature.returnType}[${this.signature.dimensions.join(":")}]: ${
+        this.id
+      })`
+    );
   }
   getInstance() {
     const [found, x] = globalAstScopeStack.getSymbol(this.id);
@@ -763,7 +842,10 @@ export class AstArrayDeclaration extends AstIdentifierDeclaration {
   }
   execute() {
     // push an instance of this variable onto the stack
-    globalAstScopeStack.newSymbol(this.id, new ArrayInstance(this.id, this.signature.returnType, this.signature.dimensions[0])); // TODO: implement multidimensional array
+    globalAstScopeStack.newSymbol(
+      this.id,
+      new ArrayInstance(this.id, this.signature.returnType, this.signature.dimensions[0])
+    ); // TODO: implement multidimensional array
     return "void";
   }
 }
@@ -772,7 +854,13 @@ export class AstFunctionDeclaration extends AstIdentifierDeclaration {
   params: AstVariableDeclaration[];
   body: AstBlock;
   signature: FunctionSignature;
-  constructor(ctx: ParserRuleContext, returnType: AllowedTypes | "void", id: string, params: AstVariableDeclaration[], body?: AstBlock) {
+  constructor(
+    ctx: ParserRuleContext,
+    returnType: AllowedTypes | "void",
+    id: string,
+    params: AstVariableDeclaration[],
+    body?: AstBlock
+  ) {
     super(ctx, id);
     this.params = params;
     this.body = body;
