@@ -113,13 +113,13 @@ export class Processor {
     this.fetchData = this.bus.read(this.pc, 4, false);
     this.fetchError = this.bus.error;
     this.state = "decode";
-    console.log("Fetch: ", this.fetchData);
+    // console.log("Fetch: ", this.fetchData);
   }
 
   decode() {
     this.instr = Instruction.Decode(this.fetchData);
     this.datapath = ACTION_TABLE[this.instr.opName];
-    console.log("Decode: ", this.instr.opName, this.instr.params, this.datapath);
+    // console.log("Decode: ", this.instr.opName, this.instr.params, this.datapath);
     this.state = this.datapath.aluOp ? "compute" : "updatePC";
 
     if (this.instr.opName === "ecall") {

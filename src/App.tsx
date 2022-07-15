@@ -5,7 +5,7 @@ import { ASMGenerator } from "./compilers/riscv/ASMGenerator";
 import { MCGenerator } from "./assemblers/riscv/MCGenerator";
 import { Computer } from "./simulator/System";
 import "./app.css";
-import produce from "immer";
+import produce, { enableMapSet } from "immer";
 import { ChakraProvider, theme, Box } from "@chakra-ui/react";
 import { ReflexContainer, ReflexElement, ReflexSplitter } from "react-reflex";
 import { Schematic } from "./ui/schematic/schematic";
@@ -13,13 +13,15 @@ import { ASMRootNode } from "./languages/riv32asm/parser/astNodes";
 import { Instruction } from "./languages/riv32asm/parser/Instruction";
 import { AstNode } from "./languages/simpleC/parser/astNodes";
 
+enableMapSet();
+
 const codeFile = require("./languages/simpleC/examples/fib.tc");
 const compiler = new ASMGenerator();
 const assembler = new MCGenerator();
 
 export const ComputerContext = React.createContext<{
   computer: Computer;
-  breakpoints: number[];
+  breakpoints: Set<number>;
   render: React.DispatchWithoutAction;
 } | null>(null);
 const computer = new Computer();
@@ -33,7 +35,7 @@ export const App = () => {
   const [asmLinePos, setAsmLinePos] = useState(0);
   const [codeLinePos, setCodeLinePos] = useState(0);
 
-  const [breakpoints, setBreakpoints] = useState([]);
+  const [breakpoints, setBreakpoints] = useState(new Set<number>());
 
   const [codeRange, setCodeRange] = useState<CodeHighlightInfo>(new CodeHighlightInfo());
   const [asmRange, setAsmRange] = useState<CodeHighlightInfo>(new CodeHighlightInfo());
@@ -81,12 +83,23 @@ export const App = () => {
   };
 
   const updateAsmBreakpoints = (pos: number, on: boolean) => {
-    const match =
-      findRangeMap(asmMachineCodeRangeMap, { start: pos, side: "left" }).right.startLine * 4;
+    const match = findRangeMap(asmMachineCodeRangeMap, { start: pos, side: "left" });
+    if (!match) return; // eg clicked on a label
 
-    if (on === false) {
-      setBreakpoints([...breakpoints.filter((x) => x !== match)]);
-    } else setBreakpoints([...breakpoints.filter((x) => x !== match), match]);
+    const address = match.right.startLine * 4;
+
+    if (on)
+      setBreakpoints(
+        produce(breakpoints, (draft) => {
+          draft.add(address);
+        })
+      );
+    else
+      setBreakpoints(
+        produce(breakpoints, (draft) => {
+          draft.delete(address);
+        })
+      );
   };
 
   function setRanges(matches) {

@@ -60,7 +60,7 @@ export const IR = () => {
   };
 
   const handleRun = () => {
-    while (!breakpoints.includes(computer.cpu.pc) && !computer.cpu.isExit) {
+    while (!breakpoints.has(computer.cpu.pc) && !computer.cpu.isExit) {
       computer.step();
     }
     render();
