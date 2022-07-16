@@ -102,6 +102,10 @@ interface GlobalVar {
   value: string;
 }
 
+interface Linker {
+  fast_multiply: boolean;
+}
+
 export class ASMGenerator {
   emitter: RiscvEmmiter;
   labelCount: number = 0;
@@ -110,6 +114,7 @@ export class ASMGenerator {
   dataSection: GlobalVar[];
   rangeMap: RangeMap;
   src: string;
+  linker: Linker;
 
   constructor() {
     this.emitter = new RiscvEmmiter();
@@ -123,6 +128,7 @@ export class ASMGenerator {
     this.labelCount = 0;
     this.dataSection = [];
     this.rangeMap = [];
+    this.linker = { fast_multiply: false };
   }
 
   newLabel(stub: string = "") {
@@ -139,9 +145,9 @@ export class ASMGenerator {
     this.emitter.emitSW(rs, R.SP, 0, comment);
   }
 
-  popStack(comment: string = "pop top of stack to A0") {
+  popStack(rd: R, comment: string = `pop top of stack to X${rd}`) {
     this.emitter.emitADDI(R.SP, R.SP, 4, "shrink stack");
-    this.emitter.emitLW(R.A0, R.SP, 0, comment);
+    this.emitter.emitLW(rd, R.SP, 0, comment);
   }
 
   codegen(root: AstNode, src: string) {
@@ -153,6 +159,8 @@ export class ASMGenerator {
     this.emitter.emitGlobalLabel("main");
 
     this.visitRepl(root);
+
+    if (this.linker.fast_multiply) this.linkFastMultiply();
 
     this.emitter.startData();
     this.dataSection.forEach((globalvar) => {
@@ -539,6 +547,13 @@ export class ASMGenerator {
           `a0 = t1 + a0 (${node.lhs.toCode()}) + ${node.rhs.toCode()})`
         );
         break;
+      case "*":
+        this.linker.fast_multiply = true;
+        this.pushStack(R.A1, "save copy of A1 to stack");
+        this.emitter.emitMV(R.A1, R.T1, "Move T1 to A1");
+        this.emitter.emitJAL("__fast_multiply", "a0 = a0 * a1");
+        this.popStack(R.A1, "restore A1 from stack");
+        break;
       case "-":
         this.emitter.emitSUB(
           R.A0,
@@ -595,5 +610,37 @@ export class ASMGenerator {
     }
     this.emitter.emitADDI(R.SP, R.SP, 4, `pop lhs temporary ${lhsTempLabel} off stack`);
     this.scopeStack.popLocal();
+  }
+
+  linkFastMultiply() {
+    const fast_multiply = "__fast_multiply";
+    const next_digit = this.newLabel("next_digit");
+    const skip = this.newLabel("skip");
+    this.emitter.emitLocalLabel(fast_multiply);
+    this.emitter.emitLI(R.T0, 0);
+    this.emitter.emitLocalLabel(next_digit);
+    this.emitter.emitANDI(R.T1, R.A1, 1);
+    this.emitter.emitSRAI(R.A1, R.A1, 1);
+    this.emitter.emitBEQ(R.T1, R.ZERO, skip);
+    this.emitter.emitADD(R.T0, R.T0, R.A0);
+    this.emitter.emitLocalLabel(skip);
+    this.emitter.emitSLLI(R.A0, R.A0, 1);
+    this.emitter.emitBNE(R.A1, R.ZERO, next_digit);
+    this.emitter.emitMV(R.A0, R.T0);
+    this.emitter.emitRET();
+    //     fast_multiply:
+    //    LI t0, 0
+
+    // next_digit:
+    //    ANDI t1, a1, 1           # is rightmost bit 1?
+    //    SRAI a1, a1, 1
+
+    //    BEQ  t1, zero, skip      # if right most bit 0, don't add
+    //    ADD  t0, t0, a0
+    // skip:
+    //    SLLI a0, a0, 1           # double first argument
+    //    BNE  a1, zero, next_digit
+    //    MV   a0, t0
+    //    RET
   }
 }

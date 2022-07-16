@@ -1,4 +1,4 @@
-// Generated from c:\code\dkriscv\src\assemblers\riscv\SimpleASM.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from c:\code\dkriscv\src\languages\riv32asm\parser\SimpleASM.g4 by ANTLR 4.9.0-SNAPSHOT
 
 
 import { ATN } from "antlr4ts/atn/ATN";
@@ -1136,7 +1136,7 @@ export class SimpleASMParser extends Parser {
 			this.state = 190;
 			this.match(SimpleASMParser.T__15);
 			this.state = 191;
-			this.immediate();
+			this.match(SimpleASMParser.ID);
 			}
 		}
 		catch (re) {
@@ -1526,7 +1526,7 @@ export class SimpleASMParser extends Parser {
 		"\xB7\xB8\x05*\x16\x02\xB8\xB9\x07@\x02\x02\xB9\xBA\x05(\x15\x02\xBA\xBB" +
 		"\x07A\x02\x02\xBB\x1F\x03\x02\x02\x02\xBC\xBD\t\f\x02\x02\xBD\xBE\x05" +
 		"(\x15\x02\xBE\xBF\x07\x12\x02\x02\xBF\xC0\x05(\x15\x02\xC0\xC1\x07\x12" +
-		"\x02\x02\xC1\xC2\x05*\x16\x02\xC2!\x03\x02\x02\x02\xC3\xC4\x07&\x02\x02" +
+		"\x02\x02\xC1\xC2\x07V\x02\x02\xC2!\x03\x02\x02\x02\xC3\xC4\x07&\x02\x02" +
 		"\xC4\xC5\x05(\x15\x02\xC5\xC6\x07\x12\x02\x02\xC6\xC7\x05*\x16\x02\xC7" +
 		"\xC8\x07@\x02\x02\xC8\xC9\x05(\x15\x02\xC9\xCA\x07A\x02\x02\xCA\xD1\x03" +
 		"\x02\x02\x02\xCB\xCC\x07$\x02\x02\xCC\xCD\x05(\x15\x02\xCD\xCE\x07\x12" +
@@ -2128,9 +2128,7 @@ export class BtypeContext extends ParserRuleContext {
 	public _op!: Token;
 	public _rs1!: RegisterContext;
 	public _rs2!: RegisterContext;
-	public immediate(): ImmediateContext {
-		return this.getRuleContext(0, ImmediateContext);
-	}
+	public ID(): TerminalNode { return this.getToken(SimpleASMParser.ID, 0); }
 	public register(): RegisterContext[];
 	public register(i: number): RegisterContext;
 	public register(i?: number): RegisterContext | RegisterContext[] {

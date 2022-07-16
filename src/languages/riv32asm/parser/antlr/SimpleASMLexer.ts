@@ -1,4 +1,4 @@
-// Generated from c:\code\dkriscv\src\assemblers\riscv\SimpleASM.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from c:\code\dkriscv\src\languages\riv32asm\parser\SimpleASM.g4 by ANTLR 4.9.0-SNAPSHOT
 
 
 import { ATN } from "antlr4ts/atn/ATN";

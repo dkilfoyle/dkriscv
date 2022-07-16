@@ -6,18 +6,34 @@ import { MCGenerator } from "./assemblers/riscv/MCGenerator";
 import { Computer } from "./simulator/System";
 import "./app.css";
 import produce, { enableMapSet } from "immer";
-import { ChakraProvider, theme, Box } from "@chakra-ui/react";
+import { ChakraProvider, theme, Box, Flex } from "@chakra-ui/react";
 import { ReflexContainer, ReflexElement, ReflexSplitter } from "react-reflex";
 import { Schematic } from "./ui/schematic/schematic";
 import { ASMRootNode } from "./languages/riv32asm/parser/astNodes";
 import { Instruction } from "./languages/riv32asm/parser/Instruction";
 import { AstNode } from "./languages/simpleC/parser/astNodes";
+import { ActivityBar } from "./ui/ActivityBar";
+import { VscFiles, VscSettings, VscSettingsGear } from "react-icons/vsc";
+import "rc-tree/assets/index.css";
+import Tree, { TreeNode } from "rc-tree";
 
 enableMapSet();
 
-const codeFile = require("./languages/simpleC/examples/fib.tc");
 const compiler = new ASMGenerator();
 const assembler = new MCGenerator();
+
+const fileTreeData = [
+  {
+    title: "Files",
+    children: [
+      { title: "hello.tc" },
+      { title: "fib.tc" },
+      { title: "sum.tc" },
+      { title: "mul.tc" },
+      { title: "blank.tc" },
+    ],
+  },
+];
 
 export const ComputerContext = React.createContext<{
   computer: Computer;
@@ -27,6 +43,7 @@ export const ComputerContext = React.createContext<{
 const computer = new Computer();
 
 export const App = () => {
+  const [filename, setFilename] = useState("fib.tc");
   const [code, setCode] = useState("");
   const [asm, setAsm] = useState("");
 
@@ -44,6 +61,8 @@ export const App = () => {
   const [codeAsmRangeMap, setCodeAsmRangeMap] = useState<RangeMap>([]);
   const [asmMachineCodeRangeMap, setAsmMachineCodeRangeMap] = useState<RangeMap>([]);
 
+  const [activity, setActivity] = useState(0);
+
   const findRangeMap = (
     rangeMap: RangeMap,
     criteria: { start: number; end?: number; side: "left" | "right" }
@@ -55,12 +74,12 @@ export const App = () => {
   };
 
   useEffect(() => {
-    fetch(codeFile)
+    fetch(require("./languages/simpleC/examples/" + filename))
       .then((response) => response.text())
       .then((textContent) => {
         setCode(textContent);
       });
-  });
+  }, [filename]);
 
   const updateCAst = (ast: AstNode) => {
     const { code: asm, rangeMap } = compiler.codegen(ast, code);
@@ -182,11 +201,41 @@ export const App = () => {
 
   const [, render] = useReducer((p) => !p, false);
 
+  const activityPanel = () => {
+    switch (activity) {
+      case 0: // files
+        return (
+          <Tree
+            treeData={fileTreeData as any}
+            fieldNames={{ key: "title" }}
+            showLine
+            onSelect={(keys) => {
+              const x = keys[0].toString();
+              console.log(x);
+              if (x !== "Files") setFilename(x);
+            }}></Tree>
+        );
+      case 1: // settings
+        return <span>Settings</span>;
+    }
+  };
+
   return (
     <ChakraProvider theme={theme}>
-      <Box fontSize="xl" h="100vh">
+      <Flex direction="row" fontSize="md" h="100vh">
+        <ActivityBar
+          checked={activity}
+          icons={[VscFiles, VscSettingsGear]}
+          onClick={(index) => {
+            if (index === activity) setActivity(-1);
+            else setActivity(index);
+          }}></ActivityBar>
         <ComputerContext.Provider value={{ computer, breakpoints, render }}>
           <ReflexContainer orientation="vertical">
+            <ReflexElement size={activity === -1 ? 0 : 100}>
+              <Box p={2}>{activityPanel()}</Box>
+            </ReflexElement>
+            <ReflexSplitter />
             <ReflexElement className="c-pane">
               <CodeEditor
                 code={code}
@@ -216,7 +265,7 @@ export const App = () => {
             </ReflexElement>
           </ReflexContainer>
         </ComputerContext.Provider>
-      </Box>
+      </Flex>
     </ChakraProvider>
   );
 };

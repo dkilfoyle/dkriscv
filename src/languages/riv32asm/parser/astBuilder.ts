@@ -4,6 +4,7 @@
 import { ParserRuleContext } from "antlr4ts/ParserRuleContext";
 import { AbstractParseTreeVisitor } from "antlr4ts/tree/AbstractParseTreeVisitor";
 import {
+  BtypeContext,
   DataContext,
   EnvironmentContext,
   ItypeContext,
@@ -223,11 +224,13 @@ export class SimpleASMAstBuilder
     this.instructions.push(new Instruction(ctx._op.text, { imm, rs1, rs2 }, this.getPos(ctx)));
   }
 
-  visitBtype(ctx: StypeContext) {
+  visitBtype(ctx: BtypeContext) {
     const rs1 = parseInt(registerNumbers[ctx._rs1.text]);
     const rs2 = parseInt(registerNumbers[ctx._rs2.text]);
-    const imm = parseInt(ctx.immediate().text) >>> 0;
-    this.instructions.push(new Instruction(ctx._op.text, { imm, rs1, rs2 }, this.getPos(ctx)));
+    const label = ctx.ID().text;
+    this.instructions.push(
+      new Instruction(ctx._op.text, { offset: label, rs1, rs2 }, this.getPos(ctx))
+    );
   }
 
   visitJtype(ctx: JtypeContext) {

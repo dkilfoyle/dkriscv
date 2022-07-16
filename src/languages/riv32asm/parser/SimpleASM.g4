@@ -80,8 +80,7 @@ stype:
 	op = ('sb' | 'sh' | 'sw') rs2 = register ',' immediate '(' rs1 = register ')';
 
 btype:
-	op = ('beq' | 'bne' | 'blt' | 'bge' | 'bltu' | 'bgeu') rs1 = register ',' rs2 = register ','
-		immediate;
+	op = ('beq' | 'bne' | 'blt' | 'bge' | 'bltu' | 'bgeu') rs1 = register ',' rs2 = register ',' ID;
 
 jtype:
 	op = 'jalr' rd = register ',' immediate '(' rs1 = register ')'

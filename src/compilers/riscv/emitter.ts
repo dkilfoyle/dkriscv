@@ -112,6 +112,22 @@ export class RiscvEmmiter {
     this.emitIns(`sub ${rd}, ${rs1}, ${rs2}`, comment);
   }
 
+  emitANDI(rd: R, rs: R, imm: number | string, comment?: string) {
+    this.emitIns(`andi ${rd}, ${rs}, ${imm}`, comment);
+  }
+  emitORI(rd: R, rs: R, imm: number | string, comment?: string) {
+    this.emitIns(`ori ${rd}, ${rs}, ${imm}`, comment);
+  }
+  emitXORI(rd: R, rs: R, imm: number | string, comment?: string) {
+    this.emitIns(`xori ${rd}, ${rs}, ${imm}`, comment);
+  }
+  emitSRAI(rd: R, rs: R, imm: number | string, comment?: string) {
+    this.emitIns(`srai ${rd}, ${rs}, ${imm}`, comment);
+  }
+  emitSLLI(rd: R, rs: R, imm: number | string, comment?: string) {
+    this.emitIns(`slli ${rd}, ${rs}, ${imm}`, comment);
+  }
+
   emitLW(rd: R, rs: R, imm: number | null, comment?: string) {
     if (imm == null) this.emitIns(`lw ${rd}, ${rs}`, comment);
     else this.emitIns(`lw ${rd}, ${imm}(${rs})`, comment);
@@ -124,6 +140,12 @@ export class RiscvEmmiter {
     this.emitIns(`la ${rd}, ${label}`, comment);
   }
 
+  emitBEQ(rs1: R, rs2: R, label: string, comment?: string) {
+    this.emitIns(`beq ${rs1}, ${rs2}, ${label}`, comment);
+  }
+  emitBNE(rs1: R, rs2: R, label: string, comment?: string) {
+    this.emitIns(`bne ${rs1}, ${rs2}, ${label}`, comment);
+  }
   emitBEQZ(rs: R, label: string, comment?: string) {
     this.emitIns(`beqz ${rs}, ${label}`, comment);
   }
@@ -140,6 +162,10 @@ export class RiscvEmmiter {
 
   emitNOT(rd: R, rs: R, comment?: string) {
     this.emitIns(`not ${rd}, ${rs}`, comment);
+  }
+
+  emitRET(comment?: string) {
+    this.emitIns(`jr ra`, comment);
   }
 
   emitECALL() {
