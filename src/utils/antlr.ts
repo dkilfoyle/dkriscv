@@ -21,3 +21,11 @@ export const getEmptyDocPosition = () => {
     endCMPos: 0,
   };
 };
+
+export const loadTextFile = async (filename) => {
+  return fetch(filename)
+    .then((response) => response.text())
+    .then((textContent) => {
+      return textContent;
+    });
+};

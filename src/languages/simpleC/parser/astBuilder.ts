@@ -45,7 +45,7 @@ import {
   AstFunctionDeclaration,
   AstIdentifierDeclaration,
   AstIf,
-  AstNode,
+  AstCNode,
   AstNull,
   AstPrintf,
   AstRepl,
@@ -63,8 +63,8 @@ import { ScopeStack } from "./scopeStack";
 import { AllowedTypes } from "./signature";
 
 export class SimpleCAstBuilder
-  extends AbstractParseTreeVisitor<AstNode>
-  implements SimpleCVisitor<AstNode>
+  extends AbstractParseTreeVisitor<AstCNode>
+  implements SimpleCVisitor<AstCNode>
 {
   scopeStack: ScopeStack<AstIdentifierDeclaration, void>;
   anonMax: number = 0;
@@ -96,7 +96,7 @@ export class SimpleCAstBuilder
     return new AstNull();
   }
 
-  aggregateResult(aggregate: AstNode, nextResult: AstNode) {
+  aggregateResult(aggregate: AstCNode, nextResult: AstCNode) {
     return nextResult;
   }
 

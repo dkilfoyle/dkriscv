@@ -19,7 +19,7 @@ import { ASMRootNode } from "../languages/riv32asm/parser/astNodes";
 import { SimpleCLexer } from "../languages/simpleC/parser/antlr/SimpleCLexer";
 import { SimpleCParser } from "../languages/simpleC/parser/antlr/SimpleCParser";
 import { SimpleCAstBuilder } from "../languages/simpleC/parser/astBuilder";
-import { AstNode } from "../languages/simpleC/parser/astNodes";
+import { AstCNode } from "../languages/simpleC/parser/astNodes";
 import { ErrorListener } from "../languages/simpleC/parser/ErrorListener";
 
 export interface HighlightRange extends DocPosition {
@@ -60,7 +60,7 @@ export const CodeEditor = (props: {
   lang: string;
   code: string;
   highlightRanges: CodeHighlightInfo;
-  updateAst: (root: ASMRootNode | AstNode) => void;
+  updateAst: (root: ASMRootNode | AstCNode) => void;
   updatePos: (pos: number) => void;
   updateBreakpoints?: (pos: number, on: boolean) => void;
 }) => {

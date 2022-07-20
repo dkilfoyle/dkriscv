@@ -11,11 +11,11 @@ import { ReflexContainer, ReflexElement, ReflexSplitter } from "react-reflex";
 import { Schematic } from "./ui/schematic/schematic";
 import { ASMRootNode } from "./languages/riv32asm/parser/astNodes";
 import { Instruction } from "./languages/riv32asm/parser/Instruction";
-import { AstNode } from "./languages/simpleC/parser/astNodes";
+import { AstCNode } from "./languages/simpleC/parser/astNodes";
 import { ActivityBar } from "./ui/ActivityBar";
-import { VscFiles, VscSettings, VscSettingsGear } from "react-icons/vsc";
+import { VscFiles, VscSettingsGear } from "react-icons/vsc";
 import "rc-tree/assets/index.css";
-import Tree, { TreeNode } from "rc-tree";
+import Tree from "rc-tree";
 
 enableMapSet();
 
@@ -30,6 +30,7 @@ const fileTreeData = [
       { title: "fib.tc" },
       { title: "sum.tc" },
       { title: "mul.tc" },
+      { title: "sqrt.tc" },
       { title: "blank.tc" },
     ],
   },
@@ -81,7 +82,7 @@ export const App = () => {
       });
   }, [filename]);
 
-  const updateCAst = (ast: AstNode) => {
+  const updateCAst = (ast: AstCNode) => {
     const { code: asm, rangeMap } = compiler.codegen(ast, code);
     setAsm(asm);
     setCodeAsmRangeMap(rangeMap);

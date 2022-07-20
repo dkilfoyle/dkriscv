@@ -10,7 +10,7 @@ import {
 import { sprintf } from "sprintf-js";
 import { DocPosition, getEmptyDocPosition } from "../../../utils/antlr";
 
-export const errorNodes: AstNode[] = [];
+export const errorNodes: AstCNode[] = [];
 let globalReturnResult: string | number | boolean; // todo better method
 const globalAstScopeStack = new ScopeStack<Instance, void>();
 
@@ -94,7 +94,7 @@ export class ArrayInstance extends Instance {
 //   }
 // }
 
-export class AstNode {
+export class AstCNode {
   pos: DocPosition;
   constructor(ctx?: ParserRuleContext) {
     if (ctx) {
@@ -131,7 +131,7 @@ export class AstNode {
   }
 }
 
-export class AstNull extends AstNode {
+export class AstNull extends AstCNode {
   toString(indent = 0) {
     return this.indent(indent, "AstNull()");
   }
@@ -143,7 +143,7 @@ export class AstNull extends AstNode {
   }
 }
 
-export class AstError extends AstNode {
+export class AstError extends AstCNode {
   errorMsg: string;
   constructor(ctx: ParserRuleContext, msg: string) {
     super(ctx);
@@ -162,7 +162,7 @@ export class AstError extends AstNode {
   }
 }
 
-export class AstRepl extends AstNode {
+export class AstRepl extends AstCNode {
   functions: AstFunctionDeclaration[];
   constructor(ctx: ParserRuleContext, functions: AstFunctionDeclaration[]) {
     super(ctx);
@@ -192,7 +192,7 @@ export class AstRepl extends AstNode {
 
 // =================== statement nodes
 
-export class AstBlock extends AstNode {
+export class AstBlock extends AstCNode {
   body: AstStatement[];
   returnExpression: AstExpression;
   constructor(ctx: ParserRuleContext, body: AstStatement[], returnExpression?: AstExpression) {
@@ -226,7 +226,7 @@ ${this.returnExpression ? "  return " + this.returnExpression.toString() : ""}
   }
 }
 
-export class AstStatement extends AstNode {}
+export class AstStatement extends AstCNode {}
 
 export class AstAssignment extends AstStatement {
   lhsVariable: AstVariableExpression;
@@ -349,7 +349,7 @@ ${this.thenBlock.toString(2)}
   }
 }
 
-export class AstCase extends AstNode {
+export class AstCase extends AstCNode {
   caseConstant: AstConstExpression;
   statements: AstBlock;
   hasBreak: boolean;
@@ -536,13 +536,13 @@ export class AstPrintf extends AstStatement {
 
 // ====================== Expression nodes
 
-export class AstExpression extends AstNode {
+export class AstExpression extends AstCNode {
   returnType() {
     return "unknown";
   }
 }
 
-export class AstErrorExpression extends AstNode {
+export class AstErrorExpression extends AstCNode {
   msg: string;
   constructor(ctx: ParserRuleContext, msg: string) {
     super(ctx);
@@ -772,7 +772,7 @@ export class AstBracketExpression extends AstExpression {
 
 // ============================== Named declarations (on stack)
 
-export abstract class AstIdentifierDeclaration extends AstNode {
+export abstract class AstIdentifierDeclaration extends AstCNode {
   id: string;
   signature: Signature;
   constructor(ctx: ParserRuleContext, id: string) {

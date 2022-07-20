@@ -171,4 +171,8 @@ export class RiscvEmmiter {
   emitECALL() {
     this.emitIns("ecall");
   }
+
+  emitSource(src: string) {
+    src.split("\n").forEach((line) => this.emitIns(line));
+  }
 }

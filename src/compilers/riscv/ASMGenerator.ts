@@ -9,7 +9,7 @@ import {
   AstFunctionCall,
   AstFunctionDeclaration,
   AstIf,
-  AstNode,
+  AstCNode,
   AstRepl,
   AstReturn,
   AstStatement,
@@ -20,90 +20,22 @@ import {
 import { Scope, ScopeStack } from "../../languages/simpleC/parser/scopeStack";
 import { RangeMap } from "../../ui/CodeEditor";
 import { R, RiscvEmmiter } from "./emitter";
+import { getLibFiles, LibInclude } from "./lib/LibLinker";
+import { LocalScope, LocalScopeStack, LocalVariable } from "./LocalScope";
 
 // Optimisations?
 // 1. for leaf functions (do not call other functions) pass parameters as registers and no prolog/epilog
 //
 
-const WORD_SIZE = 4;
+const libFiles = getLibFiles();
+console.log("3:", libFiles);
 
-interface LocalVariable {
-  spoffset?: number;
-  fpoffset: number;
-  size: number;
-}
-
-interface LocalScope {
-  FP: number; // the SP at the entry point of the block
-  SP: number; // positive or negative offset from *local* FP
-  // if the scope is at function level then
-  // a. stack grows positive from 0(FP) for function arguments
-  // b. stack grows negative from -8(FP) for function locals
-  // otherwise stack grows negative from 0(FP)
-}
-
-class LocalScopeStack extends ScopeStack<LocalVariable, LocalScope> {
-  pushFunctionParams(node: AstFunctionDeclaration) {
-    // FP+8    Arg2
-    // FP+4    Arg1
-    // FP+0 -> Arg0
-    node.params.forEach((p, i) => {
-      this.newSymbol(p.id, { fpoffset: i * WORD_SIZE, size: WORD_SIZE });
-    });
-  }
-  pushLocal(name: string, size: number) {
-    // myfun() {
-    //   int x = 10;
-    //   int y = 5;
-    //   while (x>0) {
-    //     int z = 2;
-    //     x = x - 1;
-    //     print_int(x);
-    //   }
-    // }
-    // FP+0  Arg0
-    // FP-4  CallerFP
-    // FP-8  RA             BlockFP =-8 (enterFunction FP=-8)
-    // FP-12 Local0         BlockSP =-4  offset=-8-4=-12           int x = 10;
-    // FP-16 Local1         BlockSP =-8  offset=-8-8=-16           int y = 5;
-    //                        BlockFP = -16 (enterBlock FP = topFP + topSP = -8 + -8 = -16)
-    // FP-20   Local0         BlockSP = -4  offset=-16-4=-20       int z = 2;
-    const top = this.top();
-    top.context.SP -= size;
-    const localVar = { spoffset: top.context.SP, fpoffset: top.context.FP + top.context.SP, size };
-    this.newSymbol(name, localVar);
-    return localVar;
-  }
-  popLocal() {
-    const top = this.top();
-    const lastKey = Object.keys(top.entries)[Object.keys(top.entries).length - 1];
-    top.context.SP += this.getLocalVarOffset(lastKey).size;
-    delete top.entries[lastKey];
-  }
-  getLocalVarOffset(id: string) {
-    const [found, localVar] = this.getSymbol(id);
-    if (!found) throw new Error();
-    return localVar;
-  }
-  enterFunction(name: string) {
-    // FP: is the SP (relative to function FP) at block entry.
-    // It will be -2*WORD_SIZE after the AR has been pushed
-    return this.enterScope(`function ${name}`, { FP: -2 * WORD_SIZE, SP: 0 });
-  }
-  enterBlock(name: string) {
-    const parentContext = this.top().context;
-    this.enterScope(name, { FP: parentContext.FP + parentContext.SP, SP: 0 });
-  }
-}
+export const WORD_SIZE = 4;
 
 interface GlobalVar {
   label: string;
   type: string;
   value: string;
-}
-
-interface Linker {
-  fast_multiply: boolean;
 }
 
 export class ASMGenerator {
@@ -114,7 +46,9 @@ export class ASMGenerator {
   dataSection: GlobalVar[];
   rangeMap: RangeMap;
   src: string;
-  linker: Linker;
+  libInclude: LibInclude;
+  mulSource: string;
+  divSource: string;
 
   constructor() {
     this.emitter = new RiscvEmmiter();
@@ -128,7 +62,7 @@ export class ASMGenerator {
     this.labelCount = 0;
     this.dataSection = [];
     this.rangeMap = [];
-    this.linker = { fast_multiply: false };
+    this.libInclude = { mul: false, div: false };
   }
 
   newLabel(stub: string = "") {
@@ -150,7 +84,7 @@ export class ASMGenerator {
     this.emitter.emitLW(rd, R.SP, 0, comment);
   }
 
-  codegen(root: AstNode, src: string) {
+  codegen(root: AstCNode, src: string) {
     if (!(root instanceof AstRepl)) throw new Error();
     this.reset();
     this.src = src;
@@ -160,7 +94,7 @@ export class ASMGenerator {
 
     this.visitRepl(root);
 
-    if (this.linker.fast_multiply) this.linkFastMultiply();
+    this.linkLibs();
 
     this.emitter.startData();
     this.dataSection.forEach((globalvar) => {
@@ -548,10 +482,17 @@ export class ASMGenerator {
         );
         break;
       case "*":
-        this.linker.fast_multiply = true;
+        this.libInclude.mul = true;
         this.pushStack(R.A1, "save copy of A1 to stack");
         this.emitter.emitMV(R.A1, R.T1, "Move T1 to A1");
-        this.emitter.emitJAL("__fast_multiply", "a0 = a0 * a1");
+        this.emitter.emitJAL("__mulsi3", "a0 = a0 * a1");
+        this.popStack(R.A1, "restore A1 from stack");
+        break;
+      case "/":
+        this.libInclude.div = true;
+        this.pushStack(R.A1, "save copy of A1 to stack");
+        this.emitter.emitMV(R.A1, R.T1, "Move T1 to A1");
+        this.emitter.emitJAL("__divsi3", "a0 = a0 / a1");
         this.popStack(R.A1, "restore A1 from stack");
         break;
       case "-":
@@ -612,35 +553,12 @@ export class ASMGenerator {
     this.scopeStack.popLocal();
   }
 
-  linkFastMultiply() {
-    const fast_multiply = "__fast_multiply";
-    const next_digit = this.newLabel("next_digit");
-    const skip = this.newLabel("skip");
-    this.emitter.emitLocalLabel(fast_multiply);
-    this.emitter.emitLI(R.T0, 0);
-    this.emitter.emitLocalLabel(next_digit);
-    this.emitter.emitANDI(R.T1, R.A1, 1);
-    this.emitter.emitSRAI(R.A1, R.A1, 1);
-    this.emitter.emitBEQ(R.T1, R.ZERO, skip);
-    this.emitter.emitADD(R.T0, R.T0, R.A0);
-    this.emitter.emitLocalLabel(skip);
-    this.emitter.emitSLLI(R.A0, R.A0, 1);
-    this.emitter.emitBNE(R.A1, R.ZERO, next_digit);
-    this.emitter.emitMV(R.A0, R.T0);
-    this.emitter.emitRET();
-    //     fast_multiply:
-    //    LI t0, 0
-
-    // next_digit:
-    //    ANDI t1, a1, 1           # is rightmost bit 1?
-    //    SRAI a1, a1, 1
-
-    //    BEQ  t1, zero, skip      # if right most bit 0, don't add
-    //    ADD  t0, t0, a0
-    // skip:
-    //    SLLI a0, a0, 1           # double first argument
-    //    BNE  a1, zero, next_digit
-    //    MV   a0, t0
-    //    RET
+  linkLibs() {
+    if (this.libInclude.mul) {
+      this.emitter.emitSource(libFiles[0]);
+    }
+    if (this.libInclude.div) {
+      this.emitter.emitSource(libFiles[1]);
+    }
   }
 }
