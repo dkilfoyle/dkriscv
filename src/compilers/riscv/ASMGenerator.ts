@@ -18,17 +18,14 @@ import {
   AstWhile,
 } from "../../languages/simpleC/parser/astNodes";
 import { Scope, ScopeStack } from "../../languages/simpleC/parser/scopeStack";
+import { library } from "../../linker/library";
 import { RangeMap } from "../../ui/CodeEditor";
 import { R, RiscvEmmiter } from "./emitter";
-import { getLibFiles, LibInclude } from "./lib/LibLinker";
 import { LocalScope, LocalScopeStack, LocalVariable } from "./LocalScope";
 
 // Optimisations?
 // 1. for leaf functions (do not call other functions) pass parameters as registers and no prolog/epilog
 //
-
-const libFiles = getLibFiles();
-console.log("3:", libFiles);
 
 export const WORD_SIZE = 4;
 
@@ -46,7 +43,6 @@ export class ASMGenerator {
   dataSection: GlobalVar[];
   rangeMap: RangeMap;
   src: string;
-  libInclude: LibInclude;
   mulSource: string;
   divSource: string;
 
@@ -62,7 +58,6 @@ export class ASMGenerator {
     this.labelCount = 0;
     this.dataSection = [];
     this.rangeMap = [];
-    this.libInclude = { mul: false, div: false };
   }
 
   newLabel(stub: string = "") {
@@ -93,8 +88,6 @@ export class ASMGenerator {
     this.emitter.emitGlobalLabel("main");
 
     this.visitRepl(root);
-
-    this.linkLibs();
 
     this.emitter.startData();
     this.dataSection.forEach((globalvar) => {
@@ -482,14 +475,14 @@ export class ASMGenerator {
         );
         break;
       case "*":
-        this.libInclude.mul = true;
+        library.mul.include = true;
         this.pushStack(R.A1, "save copy of A1 to stack");
         this.emitter.emitMV(R.A1, R.T1, "Move T1 to A1");
         this.emitter.emitJAL("__mulsi3", "a0 = a0 * a1");
         this.popStack(R.A1, "restore A1 from stack");
         break;
       case "/":
-        this.libInclude.div = true;
+        library.div.include = true;
         this.pushStack(R.A1, "save copy of A1 to stack");
         this.emitter.emitMV(R.A1, R.T1, "Move T1 to A1");
         this.emitter.emitJAL("__divsi3", "a0 = a0 / a1");
@@ -551,14 +544,5 @@ export class ASMGenerator {
     }
     this.emitter.emitADDI(R.SP, R.SP, 4, `pop lhs temporary ${lhsTempLabel} off stack`);
     this.scopeStack.popLocal();
-  }
-
-  linkLibs() {
-    if (this.libInclude.mul) {
-      this.emitter.emitSource(libFiles[0]);
-    }
-    if (this.libInclude.div) {
-      this.emitter.emitSource(libFiles[1]);
-    }
   }
 }

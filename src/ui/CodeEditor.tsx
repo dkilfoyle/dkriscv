@@ -100,7 +100,10 @@ export const CodeEditor = (props: {
     return errorListener.errors.map((e) => {
       return {
         from: doc.line(e.line).from + e.charPositionInLine,
-        to: doc.line(e.line).from + e.charPositionInLine + e.offendingSymbol.text.length,
+        to:
+          doc.line(e.line).from +
+          e.charPositionInLine +
+          (e.offendingSymbol ? e.offendingSymbol.text.length : 1),
         message: e.msg,
         severity: "error",
       };

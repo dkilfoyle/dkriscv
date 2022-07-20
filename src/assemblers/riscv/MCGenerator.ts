@@ -1,6 +1,7 @@
 import { SymbolTable } from "../../languages/riv32asm/parser/astBuilder";
 import { DataSection, ASMRootNode } from "../../languages/riv32asm/parser/astNodes";
 import { Instruction } from "../../languages/riv32asm/parser/Instruction";
+import { library } from "../../linker/library";
 import { RangeMap } from "../../ui/CodeEditor";
 
 export class MCGenerator {
@@ -17,6 +18,14 @@ export class MCGenerator {
     this.reset();
     this.instructions = root.instructions;
     this.dataSection = root.dataSection;
+
+    Object.keys(library).forEach((lib) => {
+      console.log(library[lib].asmAst);
+      // append library[lib].asmAst.instructions
+    });
+
+    debugger;
+    // TODO: combine all the instructions, updating label offsets, combine datasections
 
     // set data section to end of text section and add this offset to each data symbol
     const dataSectionStart = this.instructions.length * 4;

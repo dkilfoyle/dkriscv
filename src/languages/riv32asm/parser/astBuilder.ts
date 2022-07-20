@@ -21,6 +21,7 @@ import { Instruction } from "./Instruction";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
 import { DocPosition } from "../../../utils/antlr";
 import { ASMRootNode, DataSection } from "./astNodes";
+import { pseudoRandomBytes } from "crypto";
 
 export const registerNumbers = {
   zero: 0,
@@ -108,6 +109,7 @@ const pseudos = {
   bgez:   {name: "bge",                  rs2: 0         },
   bltz:   {name: "blt",                  rs2: 0         },
   bgtz:   {name: "blt",          rs1: 0                 },
+  bgtu:   {name: "bltu",  rev_rs: true                  },
   j:      {name: "jal",   rd: 0                         },
   jr:     {name: "jalr",  rd: 0,                 imm: 0 },
   jal:    {name: "jal",   rd: 1                         },
@@ -275,8 +277,13 @@ export class SimpleASMAstBuilder
     }
 
     const rop = pseudos[op];
-    this.instructions.push(
-      new Instruction(rop.name, { ...{ rs1, rs2, rd, imm, offset }, ...rop }, this.getPos(ctx))
-    );
+    if (pseudos[op].rev_rs)
+      this.instructions.push(
+        new Instruction(rop.name, { ...{ rs2, rs1, rd, imm, offset }, ...rop }, this.getPos(ctx))
+      );
+    else
+      this.instructions.push(
+        new Instruction(rop.name, { ...{ rs1, rs2, rd, imm, offset }, ...rop }, this.getPos(ctx))
+      );
   }
 }

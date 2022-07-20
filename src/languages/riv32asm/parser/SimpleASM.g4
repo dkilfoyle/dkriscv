@@ -28,16 +28,16 @@ instruction:
 	| btype;
 
 pseudo:
+	// loads
 	op = 'la' rd = register ',' symbol = ID
 	| op = 'li' rd = register ',' immediate
 	| op = 'mv' rd = register ',' rs1 = register
-	| op = 'not' rd = register ',' rs1 = register
-	// set if 0 
-	| op = ('seqz' | 'sltz' | 'sgtz') rd = register ',' rs1 = register
-	// branch if zero
+	// branches
+	| op = ('seqz' | 'sltz' | 'sgtz') rd = register ',' rs1 = register // set if 0 
 	| op = ('beqz' | 'bnez' | 'blez' | 'bgez' | 'bltz' | 'bgtz') rs1 = register ',' offset
-	// branch if compare
-	| op = ('bgt' | 'ble' | 'bgtu' | 'bltu') rs1 = register ',' rs2 = register ',' offset
+	| op = ('bgt' | 'ble' | 'bgtu' | 'bleu') rs1 = register ',' rs2 = register ',' offset
+	// logical
+	| op = ('not' | 'neg') rd = register ',' rs1 = register
 	// jumps 
 	| op = 'j' offset
 	| op = 'jal' offset
@@ -100,7 +100,7 @@ REG: [xXaAsStT][0-9]+;
 INT: [+-]? [0-9]+;
 HEX: '0' [xX][0-9a-fA-F]+;
 BIN: '0' [bB][01]+;
-ID: [a-zA-Z_$][a-zA-Z0-9_$]*;
+ID: ([a-zA-Z_$] | '.') [a-zA-Z0-9_$]*;
 String:
 	["] (~["\r\n\\] | '\\' ~[\r\n])* ["]
 	| ['] ( ~['\r\n\\] | '\\' ~[\r\n])* ['];
