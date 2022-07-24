@@ -1,8 +1,8 @@
 .activityBar {
   background-color: rgb(51, 51, 51);
   overflow: hidden;
-  width: 52px;
-  min-width: 52px;
+  width: 48px;
+  min-width: 48px;
 }
 
 .content {
@@ -16,10 +16,13 @@
 }
 
 .actionItem {
-  align-items: center;
-  justify-content: center;
   cursor: pointer;
   position: relative;
+  width: 100%;
+  height: 42px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
 }
 
 .actionItem.checked:before {
@@ -27,9 +30,10 @@
   position: absolute;
   z-index: 1;
   top: 0;
+  left: 0;
   height: 100%;
   width: 0;
-  border-left: 2px solid;
+  border-left: 2px solid white;
 }
 
 .actionLabel.checked {
@@ -37,11 +41,6 @@
 }
 
 .actionLabel {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
   color: rgb(156, 156, 156) !important;
   font-size: 24px !important;
 }

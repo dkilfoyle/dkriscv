@@ -7,6 +7,7 @@ import {
   BtypeContext,
   DataContext,
   EnvironmentContext,
+  GlobalContext,
   ItypeContext,
   JtypeContext,
   LabelContext,
@@ -21,7 +22,6 @@ import { Instruction } from "./Instruction";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
 import { DocPosition } from "../../../utils/antlr";
 import { ASMRootNode, DataSection } from "./astNodes";
-import { pseudoRandomBytes } from "crypto";
 
 export const registerNumbers = {
   zero: 0,
@@ -129,6 +129,7 @@ export class SimpleASMAstBuilder
   instructions!: Instruction[];
   labels!: SymbolTable;
   symbols!: SymbolTable;
+  globals!: string[];
   dataSection!: DataSection;
 
   constructor() {
@@ -142,11 +143,12 @@ export class SimpleASMAstBuilder
     this.instructions = new Array<Instruction>();
     this.labels = {};
     this.symbols = {};
+    this.globals = [];
     this.dataSection = new DataSection();
   }
 
   protected defaultResult() {
-    return { instructions: [], symbols: {}, labels: {}, dataSection: undefined };
+    return { instructions: [], symbols: {}, labels: {}, dataSection: undefined, globals: [] };
   }
 
   visit(tree: ParseTree): ASMRootNode {
@@ -156,6 +158,7 @@ export class SimpleASMAstBuilder
       dataSection: this.dataSection,
       labels: this.labels,
       symbols: this.symbols,
+      globals: this.globals,
     };
   }
 
@@ -186,8 +189,10 @@ export class SimpleASMAstBuilder
     switch (type) {
       case ".string":
       case ".ascii":
-      case ".asciiz": {
         this.dataSection.pushString(str);
+        break;
+      case ".asciiz": {
+        this.dataSection.pushString(str + "\0");
         break;
       }
       case ".byte":
@@ -285,5 +290,9 @@ export class SimpleASMAstBuilder
       this.instructions.push(
         new Instruction(rop.name, { ...{ rs1, rs2, rd, imm, offset }, ...rop }, this.getPos(ctx))
       );
+  }
+
+  visitGlobal(ctx: GlobalContext) {
+    this.globals.push(ctx.ID().text);
   }
 }

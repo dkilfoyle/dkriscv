@@ -420,7 +420,7 @@ export class ASMGenerator {
     else if (node.returnType() === "string") {
       const label = this.newLabel("stringconst");
       let value = node.value as string;
-      this.dataSection.push({ label, type: "asciiz", value: value + "\0" });
+      this.dataSection.push({ label, type: "asciiz", value: value });
       this.emitter.emitLA(R.A0, label, "Load address of string const in data section");
     }
   }

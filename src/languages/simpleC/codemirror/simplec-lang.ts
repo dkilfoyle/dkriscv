@@ -1,8 +1,13 @@
-import { parser } from "./parser.js";
-import { foldNodeProp, foldInside, indentNodeProp } from "@codemirror/language";
+import {
+  foldInside,
+  delimitedIndent,
+  foldNodeProp,
+  indentNodeProp,
+  LanguageSupport,
+  LRLanguage,
+} from "@codemirror/language";
 import { styleTags, tags as t } from "@lezer/highlight";
-import { LanguageSupport } from "@codemirror/language";
-import { LRLanguage } from "@codemirror/language";
+import { parser } from "./parser.js";
 
 import { completeFromList } from "@codemirror/autocomplete";
 
@@ -22,10 +27,10 @@ let parserWithMetadata = parser.configure({
       Operator: t.bitwiseOperator,
     }),
     indentNodeProp.add({
-      Application: (context) => context.column(context.node.from) + context.unit,
+      Block: delimitedIndent({ closing: "}" }),
     }),
     foldNodeProp.add({
-      Application: foldInside,
+      Block: foldInside,
     }),
   ],
 });

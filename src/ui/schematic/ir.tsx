@@ -1,4 +1,3 @@
-import { ArrowForwardIcon, ArrowRightIcon, RepeatIcon } from "@chakra-ui/icons";
 import {
   Table,
   TableContainer,
@@ -14,6 +13,9 @@ import {
   IconButton,
 } from "@chakra-ui/react";
 import { useContext } from "react";
+import { VscDebugStepOver } from "react-icons/vsc";
+import { GrResume } from "react-icons/gr";
+import { BiReset } from "react-icons/bi";
 import { ComputerContext } from "../../App";
 import { instructionFormats, instructionFields } from "../../languages/riv32asm/parser/Instruction";
 import { unsignedSlice } from "../../utils/bits";
@@ -73,24 +75,19 @@ export const IR = () => {
           <Tr>
             <Th colSpan={32} paddingLeft={"10px"} paddingRight={"10px"}>
               <HStack>
-                <ButtonGroup size="xs" isAttached variant="outline">
+                <ButtonGroup size="xs" isAttached variant="solid">
                   <IconButton
                     onClick={handleStep}
-                    size="xs"
-                    icon={<RepeatIcon />}
+                    size="sm"
+                    icon={<BiReset />}
                     aria-label={""}></IconButton>
                   <IconButton
                     onClick={handleStep}
-                    size="xs"
-                    icon={<ArrowForwardIcon />}
+                    size="sm"
+                    icon={<VscDebugStepOver />}
                     aria-label={""}
                   />
-                  <IconButton
-                    onClick={handleRun}
-                    size="xs"
-                    icon={<ArrowRightIcon />}
-                    aria-label={""}
-                  />
+                  <IconButton onClick={handleRun} size="sm" icon={<GrResume />} aria-label={""} />
                 </ButtonGroup>
                 <h2>
                   IR = 0x{(ir.machineCode >>> 0).toString(16)} ({ir.iType})

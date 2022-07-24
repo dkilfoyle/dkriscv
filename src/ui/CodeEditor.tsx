@@ -1,5 +1,5 @@
 import { lintGutter, linter } from "@codemirror/lint";
-import { minimalSetup } from "codemirror";
+import { minimalSetup, basicSetup } from "codemirror";
 import { EditorView } from "@codemirror/view";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import { CharStreams, CommonTokenStream, Lexer } from "antlr4ts";
@@ -24,6 +24,7 @@ import { ErrorListener } from "../languages/simpleC/parser/ErrorListener";
 
 export interface HighlightRange extends DocPosition {
   col: string;
+  filename?: string;
 }
 
 export interface RangeMapEntry {
@@ -169,19 +170,14 @@ export const CodeEditor = (props: {
   const cmCodeRef = useRef<ReactCodeMirrorRef>({});
   const [codeChanged, setCodeChanged] = useState(false);
 
+  const extensions = [basicSetup, lintCode, lintGutter(), simpleC(), rangeHighlighter];
+  if (props.updateBreakpoints) extensions.push(breakpointGutter);
+
   return (
     <CodeMirror
       ref={cmCodeRef}
       value={props.code}
-      extensions={[
-        minimalSetup,
-        lintCode,
-        lintGutter(),
-        simpleC(),
-        rangeHighlighter,
-        baseTheme,
-        breakpointGutter,
-      ]}
+      extensions={extensions}
       onChange={(value, viewUpdate) => {
         setCodeChanged(true);
       }}

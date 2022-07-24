@@ -89,16 +89,12 @@ export const App = () => {
   };
 
   const updateAsmAst = (ast: ASMRootNode) => {
-    const { instructions, rangeMap, dataSection, symbols } = assembler.codegen(ast);
-    console.log("updateAsmAst", instructions.length);
+    const { rangeMap, memWords, instructions } = assembler.assemble(ast);
+    console.log("updateAsmAst", instructions.length, memWords.length);
     setAsmRange(new CodeHighlightInfo());
     setInstructions(instructions);
-    // setMemory(instructions.map((i) => i.machineCode));
-    instructions.forEach((ins, i) => computer.mem.write(i * 4, 4, ins.machineCode));
-    const dataStart = instructions.length * 4;
-    dataSection.data
-      .slice(0, dataSection.pointer)
-      .forEach((b, i) => computer.mem.write(dataStart + i, 1, b));
+    computer.resetAndLoad(memWords);
+
     setAsmMachineCodeRangeMap(rangeMap);
   };
 
@@ -182,7 +178,9 @@ export const App = () => {
               col: "#ede7f6",
             };
           } else {
-            debugger;
+            // debugger;
+
+            // todo: handle pointer in library code
             draft.pc = {
               startLine: 0,
               endLine: 0,
@@ -208,6 +206,7 @@ export const App = () => {
         return (
           <Tree
             treeData={fileTreeData as any}
+            expandAction="click"
             fieldNames={{ key: "title" }}
             showLine
             onSelect={(keys) => {

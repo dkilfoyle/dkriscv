@@ -1,88 +1,114 @@
 import { SymbolTable } from "../../languages/riv32asm/parser/astBuilder";
-import { DataSection, ASMRootNode } from "../../languages/riv32asm/parser/astNodes";
+import { ASMRootNode } from "../../languages/riv32asm/parser/astNodes";
 import { Instruction } from "../../languages/riv32asm/parser/Instruction";
 import { library } from "../../linker/library";
 import { RangeMap } from "../../ui/CodeEditor";
 
 export class MCGenerator {
-  instructions: Instruction[];
-  symbols: SymbolTable;
-  dataSection: DataSection;
   rangeMap: RangeMap;
+  symbols: Record<string, SymbolTable>;
+  textStart: number;
+  memWords: number[];
 
   reset() {
     this.rangeMap = [];
+    this.symbols = { globals: {} };
+    this.textStart = 0;
+    this.memWords = [];
   }
 
-  codegen(root: ASMRootNode) {
-    this.reset();
-    this.instructions = root.instructions;
-    this.dataSection = root.dataSection;
+  encode(root: ASMRootNode, filename: string, symbols: SymbolTable) {
+    this.textStart = this.memWords.length * 4;
 
-    Object.keys(library).forEach((lib) => {
-      console.log(library[lib].asmAst);
-      // append library[lib].asmAst.instructions
-    });
+    if (this.textStart % 4) {
+      console.error(`textStart ${this.textStart} is not 4 byte aligned for ${filename}`);
+      throw new Error();
+    }
+    console.log(
+      `Encoding ${filename}: textStart: ${this.textStart}, instructions: ${root.instructions.length}, data: ${root.dataSection.pointer}`,
+      symbols
+    );
 
-    debugger;
-    // TODO: combine all the instructions, updating label offsets, combine datasections
-
-    // set data section to end of text section and add this offset to each data symbol
-    const dataSectionStart = this.instructions.length * 4;
-    const newSymbolTable = Object.keys(root.symbols).reduce((acc, symbol) => {
-      acc[symbol] = root.symbols[symbol] + dataSectionStart;
-      return acc;
-    }, {});
-    this.symbols = {
-      ...root.labels,
-      ...newSymbolTable,
-    };
-
-    this.instructions.forEach((ins, i) => {
-      ins.encode(i, this.symbols);
+    // encode each instruction and add encoded value to bytecodes
+    // map the machinecode position to asm source position
+    root.instructions.forEach((ins, i) => {
+      this.memWords.push(ins.encode(this.textStart + i * 4, symbols));
       this.rangeMap.push({
-        left: { ...ins.pos, col: "red" },
-        right: { startLine: i, endLine: i, col: "blue" },
+        left: { ...ins.pos, col: "red", filename },
+        right: { startLine: this.textStart / 4 + i, endLine: this.textStart / 4 + i, col: "blue" },
       });
     });
 
-    Object.keys(this.symbols).forEach((symName, i) => {
-      const instNum = this.symbols[symName] / 4;
-      if (instNum < this.instructions.length) {
-        const inst = this.instructions[instNum];
-        this.rangeMap.push({
-          left: { startLine: inst.pos.startLine, endLine: inst.pos.endLine, col: "red" },
-          right: { startLine: i, endLine: i, col: "blue" },
-        });
-      }
-    });
-
-    return {
-      instructions: this.instructions,
-      rangeMap: this.rangeMap,
-      dataSection: this.dataSection,
-      symbols: this.symbols,
-    };
+    // add datasection to end of textsection
+    console.log("pushing data:", root.dataSection.getWords());
+    this.memWords.push(...root.dataSection.getWords());
+    console.log(this.memWords.length);
   }
 
-  printSymbols() {
-    Object.entries(this.symbols).forEach((symbol) => {
-      const [name, offset] = symbol;
-      console.log(
-        `${name.padStart(20, " ")} : ${offset.toString().padStart(4, " ")} = 0x${offset.toString(
-          16
-        )}`
-      );
-    });
+  addSymbols(root: ASMRootNode, filename: string) {
+    const dataStart = this.textStart + root.instructions.length * 4;
+
+    this.symbols[filename] = {};
+
+    // add textstart offset to each label(memory pointer)
+    this.symbols[filename] = Object.keys(root.labels).reduce((acc, label) => {
+      acc[label] = root.labels[label] + this.textStart;
+      return acc;
+    }, this.symbols[filename]);
+
+    // add datastart offset to each symbol (variable) value(memory pointer)
+    this.symbols[filename] = Object.keys(root.symbols).reduce((acc, symbol) => {
+      acc[symbol] = root.symbols[symbol] + dataStart;
+      return acc;
+    }, this.symbols[filename]);
+
+    root.globals.forEach((g) => (this.symbols.globals[g] = this.symbols[filename][g]));
+
+    // update the textStart pointer
+    this.textStart = dataStart + root.dataSection.pointer;
   }
 
-  printStatements() {
-    this.instructions.forEach((ins, i) => {
-      console.log(
-        `0x${(i * 4).toString(16).padStart(3, "0")} ${ins.formatMachineCode()} ${ins
-          .formatInstruction()
-          .padStart(37, " ")}`
-      );
+  assemble(root: ASMRootNode) {
+    this.reset();
+
+    const linked: { filename: string; ast: ASMRootNode }[] = [
+      { filename: "src", ast: root },
+      ...Object.keys(library)
+        .filter((lib) => library[lib].include)
+        .map((lib) => ({ filename: lib, ast: library[lib].asmAst })),
+    ];
+
+    // build the combined symbol table for src and all necessary libraries
+    linked.forEach((f) => this.addSymbols(f.ast, f.filename));
+    console.log("Combined symbol table: ", this.symbols);
+
+    // encode instructions and datasections using the symbol table, this will generate memWords
+    linked.forEach((f) => {
+      const fSymbols = { ...this.symbols[f.filename], ...this.symbols.globals };
+      this.encode(f.ast, f.filename, fSymbols);
     });
+
+    return { instructions: root.instructions, memWords: this.memWords, rangeMap: this.rangeMap };
   }
+
+  // printSymbols() {
+  //   Object.entries(this.symbols).forEach((symbol) => {
+  //     const [name, offset] = symbol;
+  //     console.log(
+  //       `${name.padStart(20, " ")} : ${offset.toString().padStart(4, " ")} = 0x${offset.toString(
+  //         16
+  //       )}`
+  //     );
+  //   });
+  // }
+
+  // printStatements() {
+  //   this.instructions.forEach((ins, i) => {
+  //     console.log(
+  //       `0x${(i * 4).toString(16).padStart(3, "0")} ${ins.formatMachineCode()} ${ins
+  //         .formatInstruction()
+  //         .padStart(37, " ")}`
+  //     );
+  //   });
+  // }
 }

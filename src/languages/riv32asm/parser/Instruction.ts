@@ -219,16 +219,16 @@ export class Instruction {
     this.machineCode = 0;
   }
 
-  encode(index: number, symbols: SymbolTable) {
-    // convert string offset to immediate
-    // calculate machinecode
+  encode(address: number, symbols: SymbolTable) {
+    // address is address of this instruction, used to calculated relative offsets
 
+    // convert string offset to immediate offset relative to PC(address)
     if (typeof this.params.offset == "string") {
-      this.params.imm = symbols[this.params.offset] - index * 4;
+      this.params.imm = symbols[this.params.offset] - address;
     }
 
     if (this.params.symbol) {
-      this.params.imm = symbols[this.params.symbol] - (index - 1) * 4; // = symbol - PC
+      this.params.imm = symbols[this.params.symbol] - (address - 4); // = symbol - PC
     }
 
     if (this.params.macro === "hi") {
@@ -293,6 +293,7 @@ export class Instruction {
         throw new Error();
     }
     this.machineCode = code >>> 0;
+    return this.machineCode;
   }
 
   static Decode(x: number) {

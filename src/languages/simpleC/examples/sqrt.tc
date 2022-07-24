@@ -1,13 +1,12 @@
-int sqrt(int x)
-{
-    int lo = 0;
-    int hi = x + 1;
-    while (lo < hi) {
-        int mi = (hi - lo) / 2 + lo;
-        if (mi * mi <= x)
-            lo = mi + 1;
-        else
-            hi = mi;
-    }
-    print_int(lo-1);
+int sqrt(int x) {
+  int lo = 0;
+  int hi = x + 1;
+  while (lo < hi) {
+    int mi = (hi - lo) / 2 + lo;
+    if (mi * mi <= x)
+      lo = mi + 1;
+    else
+      hi = mi;
+  }
+  print_int(lo-1);
 }  

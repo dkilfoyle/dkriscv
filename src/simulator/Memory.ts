@@ -8,6 +8,10 @@ export class Memory extends Device {
     this.data = new Uint8Array(size);
   }
 
+  reset() {
+    this.data = new Uint8Array(this.data.length);
+  }
+
   localRead(address, size) {
     let result = 0;
     for (let i = 0; i < size; i++) {

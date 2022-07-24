@@ -12,15 +12,16 @@ export type ActivityBarProps = {
 export const ActivityBar = ({ checked, icons, onClick }: ActivityBarProps) => {
   return (
     <div className="activityBar">
-      <VStack w={50} spacing={5} pt={5}>
+      <VStack spacing={2} pt={2} style={{ alignItems: "start" }}>
         {icons.map((icon, index) => (
-          <Icon
-            key={index}
-            className={classNames("actionItem", "actionLabel", { checked: checked === index })}
-            as={icon}
-            onClick={() => onClick(index)}
-            w={8}
-            h={8}></Icon>
+          <div className={classNames("actionItem", { checked: checked === index })} key={index}>
+            <Icon
+              className={classNames("actionLabel", { checked: checked === index })}
+              as={icon}
+              onClick={() => onClick(index)}
+              w={6}
+              h={6}></Icon>
+          </div>
         ))}
       </VStack>
     </div>

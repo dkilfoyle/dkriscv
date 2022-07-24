@@ -6,6 +6,7 @@ export interface ASMRootNode {
   symbols: SymbolTable;
   labels: SymbolTable;
   dataSection: DataSection;
+  globals: string[];
 }
 
 export class DataSection {
@@ -25,6 +26,12 @@ export class DataSection {
     for (let i = 0; i < x.length; i++) {
       this.pushByte(x.charCodeAt(i));
     }
+
+    // pad to 4 byte aligned
+    let pad = x.length % 4;
+    while (pad--) {
+      this.pushByte(0);
+    }
   }
   pushWord(x: number) {
     this.pushByte(x);
@@ -34,5 +41,15 @@ export class DataSection {
   }
   getBytes() {
     return this.data.slice(0, this.pointer);
+  }
+
+  getWords() {
+    const bytes = this.data.slice(0, Math.max(0, this.pointer));
+
+    // pad bytes to be 4 byte aligned
+    let i = bytes.length;
+    while (i % 4) bytes[i++] = 0;
+
+    return new Int32Array(bytes.buffer);
   }
 }

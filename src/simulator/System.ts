@@ -15,8 +15,12 @@ export class Computer {
     this.bus.addDevice(this.mem);
   }
   reset() {
+    this.mem.reset();
     this.cpu.reset();
-    // todo reset memory
+  }
+  resetAndLoad(memWords: number[]) {
+    this.reset();
+    memWords.forEach((word, i) => this.mem.write(i * 4, 4, word));
   }
   step() {
     if (this.cpu.state === "fetch") this.cpu.fetch();
