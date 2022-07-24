@@ -1,6 +1,6 @@
 import React, { useEffect, useReducer, useState } from "react";
 import "react-reflex/styles.css";
-import { CodeEditor, CodeHighlightInfo, RangeMap } from "./ui/CodeEditor";
+import { CodeEditor, CodeHighlightInfo, HighlightRange, RangeMap } from "./ui/CodeEditor";
 import { ASMGenerator } from "./compilers/riscv/ASMGenerator";
 import { MCGenerator } from "./assemblers/riscv/MCGenerator";
 import { Computer } from "./simulator/System";
@@ -121,6 +121,12 @@ export const App = () => {
       );
   };
 
+  const emptyHighlightRange: () => HighlightRange = () => ({
+    startLine: 0,
+    endLine: 0,
+    col: "red",
+  });
+
   function setRanges(matches) {
     setCodeRange(
       produce((draft) => {
@@ -137,28 +143,27 @@ export const App = () => {
   // response to change of asm position -> set code/asm highlight, preserve pc
   useEffect(() => {
     // find the rangemap entry for the current asm position
-    const matches = codeAsmRangeMap
-      // .slice()
-      // .reverse()
-      .filter((x) => asmLinePos >= x.right.startLine && asmLinePos <= x.right.endLine);
-    setRanges(matches);
-  }, [asmLinePos, codeAsmRangeMap]);
+    const matches = codeAsmRangeMap.filter(
+      (x) => asmLinePos >= x.right.startLine && asmLinePos <= x.right.endLine
+    );
+    if (optionHighlightRanges) setRanges(matches);
+    else setRanges([emptyHighlightRange()]);
+  }, [asmLinePos, codeAsmRangeMap, optionHighlightRanges]);
 
   useEffect(() => {
     // find the rangemap entry for the current asm position
-    const matches = codeAsmRangeMap
-      // .slice()
-      // .reverse()
-      .filter((x) => codeLinePos >= x.left.startLine && codeLinePos <= x.left.endLine);
-    setRanges(matches);
-  }, [codeLinePos, codeAsmRangeMap]);
+    const matches = codeAsmRangeMap.filter(
+      (x) => codeLinePos >= x.left.startLine && codeLinePos <= x.left.endLine
+    );
+    if (optionHighlightRanges) setRanges(matches);
+    else setRanges([emptyHighlightRange()]);
+  }, [codeLinePos, codeAsmRangeMap, optionHighlightRanges]);
 
   useEffect(() => {
     // find the rangemap entry for the current asm position
-    const codeRange = asmMachineCodeRangeMap
-      // .slice()
-      // .reverse()
-      .find((x) => asmLinePos >= x.left.startLine && asmLinePos <= x.left.endLine);
+    const codeRange = asmMachineCodeRangeMap.find(
+      (x) => asmLinePos >= x.left.startLine && asmLinePos <= x.left.endLine
+    );
     if (codeRange) {
       // setMemRange((arr) => [...arr, codeRange.right]);
     }
@@ -175,7 +180,7 @@ export const App = () => {
             // .slice()
             // .reverse()
             .find((x) => i.pos.startLine >= x.right.startLine && i.pos.endLine <= x.right.endLine);
-          if (codeRange) {
+          if (codeRange && optionHighlightPC) {
             draft.pc = {
               ...codeRange.left,
               col: "#ede7f6",
@@ -195,11 +200,12 @@ export const App = () => {
 
       setAsmRange(
         produce((draft) => {
-          draft.pc = { ...i.pos, col: "#ede7f6" };
+          if (optionHighlightPC) draft.pc = { ...i.pos, col: "#ede7f6" };
+          else draft.pc = { startLine: 0, endLine: 0, col: "red" };
         })
       );
     }
-  }, [instructions, codeAsmRangeMap, computer.cpu.pcLast]);
+  }, [instructions, codeAsmRangeMap, optionHighlightPC, computer.cpu.pcLast]);
 
   const [, render] = useReducer((p) => !p, false);
 
@@ -214,7 +220,6 @@ export const App = () => {
             showLine
             onSelect={(keys) => {
               const x = keys[0].toString();
-              console.log(x);
               if (x !== "Files") setFilename(x);
             }}></Tree>
         );
