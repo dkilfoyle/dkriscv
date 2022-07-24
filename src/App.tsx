@@ -6,7 +6,7 @@ import { MCGenerator } from "./assemblers/riscv/MCGenerator";
 import { Computer } from "./simulator/System";
 import "./app.css";
 import produce, { enableMapSet } from "immer";
-import { ChakraProvider, theme, Box, Flex } from "@chakra-ui/react";
+import { ChakraProvider, theme, Box, Flex, VStack, Checkbox } from "@chakra-ui/react";
 import { ReflexContainer, ReflexElement, ReflexSplitter } from "react-reflex";
 import { Schematic } from "./ui/schematic/schematic";
 import { ASMRootNode } from "./languages/riv32asm/parser/astNodes";
@@ -47,6 +47,9 @@ export const App = () => {
   const [filename, setFilename] = useState("fib.tc");
   const [code, setCode] = useState("");
   const [asm, setAsm] = useState("");
+
+  const [optionHighlightPC, setOptionHighlighPC] = useState(true);
+  const [optionHighlightRanges, setOptionHighlighRanges] = useState(true);
 
   const [instructions, setInstructions] = useState<Instruction[]>([]);
 
@@ -216,7 +219,21 @@ export const App = () => {
             }}></Tree>
         );
       case 1: // settings
-        return <span>Settings</span>;
+        return (
+          <VStack alignItems="start">
+            <h2>Highlight</h2>
+            <Checkbox
+              isChecked={optionHighlightRanges}
+              onChange={() => setOptionHighlighRanges(!optionHighlightRanges)}>
+              Ranges
+            </Checkbox>
+            <Checkbox
+              isChecked={optionHighlightPC}
+              onChange={() => setOptionHighlighPC(!optionHighlightPC)}>
+              PC
+            </Checkbox>
+          </VStack>
+        );
     }
   };
 
