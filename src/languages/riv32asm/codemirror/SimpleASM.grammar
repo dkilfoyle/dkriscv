@@ -1,0 +1,229 @@
+@top Script { line+ }
+
+line { Data | directive | instruction | Label | Register }
+
+directive { Section | Global | Align }
+
+Section {kw<'section'>? (".text" | ".data" | ".rodata" | ".bss")}
+
+Global {(".global" | ".globl") identifier}
+
+Align { ".align" Immediate}
+
+
+Data {
+	identifier ~ambig ':' ('.string' | '.ascii' | '.asciiz') String
+	| identifier ~ambig':' '.byte' numlist
+	| identifier ~ambig ':' '.word' numlist
+}
+
+Label {identifier ~ambig ':'}
+
+instruction {
+	pseudo
+	| environment
+	| rtype
+	| Itype
+	| stype
+	| utype
+	| jtype
+	| btype
+}
+
+pseudo {
+	kw<'la'> Register ',' identifier
+	| kw<'li'> Register ',' Immediate
+	| kw<"mv"> Register ',' Register
+	| (kw<'seqz'> | kw<'sltz'> | kw<'sgtz'>) Register ',' Register 
+	| (kw<'beqz'> | kw<'bnez'> | kw<'blez'> | kw<'bgez'> | kw<'bltz'> | kw<'bgtz'>) Register ',' Offset
+	| (kw<'bgt'> | kw<'ble'> | kw<'bgtu'> | kw<'bleu'>) Register ',' Register ',' Offset
+	| (kw<'not'> | kw<'neg'>) Register ',' Register
+	| kw<'j'> Offset
+	| kw<'jal'> Offset
+	| kw<'jr'> Register
+	| kw<'jalr'> Register
+	| kw<'ret'>
+	| kw<'call'> Offset
+}
+
+environment {kw<'ecall'> }
+
+rtype {
+	(
+		  kw<'add'>
+		| kw<'sub'>
+		| kw<'xor'>
+		| kw<'or'>
+		| kw<'and'>
+		| kw<'sll'>
+		| kw<'srl'>
+		| kw<'sra'>
+		| kw<'slt'>
+		| kw<'su'>
+	) Register ',' Register ','  Register
+}
+
+Itype {
+	(
+		  kw<'addi'>
+		| kw<'xori'>
+		| kw<'andi'>
+		| kw<'ori'>
+		| kw<'slli'>
+		| kw<'srli'>
+		| kw<'srai'>
+		| kw<'slti'>
+		| kw<'sltiu'>
+	) Register ',' Register ',' Immediate
+	| (kw<'lb'> | kw<'lh'> | kw<'lw'>) Register ',' Immediate '(' Register ')' 
+}
+
+stype {
+	(kw<'sb'> | kw<'sh'> | kw<'sw'>) Register ',' Immediate '(' Register ')'
+}
+
+btype {
+	(kw<'beq'> | kw<'bne'> | kw<'blt'> | kw<'bge'> | kw<'bltu'> | kw<'bgeu'>) Register ',' Register ',' identifier
+}
+
+jtype {
+	kw<'jalr'> Register ',' Immediate '(' Register ')'
+	| kw<'jal'> Register ',' Offset
+}
+
+utype {
+	kw<'lui'> Register ',' Immediate
+	| kw<'auipc'> Register ',' Immediate
+}
+
+Offset { Immediate | identifier }
+
+Register { @specialize[@name=Register]<identifier, 
+  "zero"|
+  "ra"|
+  "sp"|
+  "gp"|
+  "tp"|
+  "fp"|
+  "x0"|
+  "x1"|
+  "x2"|
+  "x3"|
+  "x4"|
+  "x5"|
+  "x6"|
+  "x7"|
+  "x8"|
+  "x9"|
+  "a0"|
+  "a1"|
+  "a2"|
+  "a3"|
+  "a4"|
+  "a5"|
+  "a6"|
+  "a7"|
+  "a8"|
+  "a9"|
+  "s0"|
+  "s1"|
+  "s2"|
+  "s3"|
+  "s4"|
+  "s5"|
+  "s6"|
+  "s7"|
+  "s8"|
+  "s9"|
+  "t0"|
+  "t1"|
+  "t2"|
+  "t3"|
+  "t4"|
+  "t5"|
+  "t6"|
+  "t7"|
+  "t8"|
+  "t9"|
+  "x10" |
+  "x11" |
+  "x12" |
+  "x13" |
+  "x14" |
+  "x15" |
+  "x16" |
+  "x17" |
+  "x18" |
+  "x19" |
+  "x20" |
+  "x21" |
+  "x22" |
+  "x23" |
+  "x24" |
+  "x25" |
+  "x26" |
+  "x27" |
+  "x28" |
+  "x29" |
+  "x30" |
+  "x31">}
+
+Immediate { Number }
+numlist { Immediate (',' Immediate)* }
+
+kw<term> { @specialize[@name={term}]<identifier, term> }
+
+
+@skip { spaces | newline | LineComment | BlockComment }
+
+@tokens {
+
+  spaces[@export] { $[\u0009 \u000b\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff]+ }
+  newline[@export] { $[\r\n\u2028\u2029] }
+
+  LineComment { "#" ![\n]* }
+
+  // FIXME split into multiple tokens
+  BlockComment { "/*" blockCommentRest }
+
+  blockCommentRest { ![*] blockCommentRest | "*" blockCommentAfterStar }
+
+  blockCommentAfterStar { "/" | "*" blockCommentAfterStar | ![/*] blockCommentRest }
+
+  @precedence { BlockComment, LineComment }
+
+  identifierChar { @asciiLetter | $[_$] }
+
+  word { identifierChar (identifierChar | @digit)* }
+
+  identifier { word }
+
+  @precedence { spaces, newline, identifier }
+
+  @precedence { spaces, newline, word }
+
+  Number {
+    (@digit ("_" | @digit)* ("." ("_" | @digit)*)? | "." @digit ("_" | @digit)*)
+      (("e" | "E") ("+" | "-")? ("_" | @digit)+)? |
+    @digit ("_" | @digit)* "n" |
+    "0x" (@digit | $[a-fA-F] | "_")+ "n"? |
+    "0b" $[01_]+ "n"? |
+    "0o" $[0-7_]+ "n"?
+  }
+
+  String {
+    '"' (![\\\n"] | "\\" _)* '"'? |
+    "'" (![\\\n'] | "\\" _)* "'"?
+  }
+
+  "="[@name=Equals]
+  "..."[@name=Spread]
+  "=>"[@name=Arrow]
+
+  "(" ")" "[" "]" "{" "}"
+
+  "?." "." "," ";" ":"
+
+}
+
+@detectDelim

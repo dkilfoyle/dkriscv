@@ -7,24 +7,54 @@ import {
   LRLanguage,
 } from "@codemirror/language";
 import { styleTags, tags as t } from "@lezer/highlight";
-import { parser } from "./parser.js";
+// import { parser } from "./parser.js";
+import { parser } from "./SimpleC2";
 
 import { completeFromList } from "@codemirror/autocomplete";
 
 let parserWithMetadata = parser.configure({
   props: [
     styleTags({
-      Identifier: t.variableName,
+      "for while do if else switch return break continue default case": t.controlKeyword,
+      "int void": t.typeName,
+      BooleanLiteral: t.bool,
+      VariableName: t.variableName,
+      "CallExpression/VariableName TaggedTemplateExpression/VariableName": t.function(
+        t.variableName
+      ),
+      VariableDefinition: t.definition(t.variableName),
+      "CallExpression/MemberExpression/PropertyName": t.function(t.propertyName),
+      "FunctionDeclaration/VariableDefinition": t.function(t.definition(t.variableName)),
+      UpdateOp: t.updateOperator,
+      LineComment: t.lineComment,
+      BlockComment: t.blockComment,
       Number: t.number,
-      Boolean: t.bool,
       String: t.string,
-      Comment: t.lineComment,
+      ArithOp: t.arithmeticOperator,
+      LogicOp: t.logicOperator,
+      BitOp: t.bitwiseOperator,
+      CompareOp: t.compareOperator,
+      RegExp: t.regexp,
+      Equals: t.definitionOperator,
+      Arrow: t.function(t.punctuation),
+      ": Spread": t.punctuation,
       "( )": t.paren,
-      "{ }": t.paren,
-      "for while if else switch": t.controlKeyword,
-      Keyword: t.keyword,
-      Assignment: t.arithmeticOperator,
-      Operator: t.bitwiseOperator,
+      "[ ]": t.squareBracket,
+      "{ }": t.brace,
+      ".": t.derefOperator,
+      ", ;": t.separator,
+
+      TypeName: t.typeName,
+      TypeDefinition: t.definition(t.typeName),
+      "type enum interface implements namespace module declare": t.definitionKeyword,
+      "abstract global Privacy readonly override": t.modifier,
+      "is keyof unique infer": t.operatorKeyword,
+
+      JSXAttributeValue: t.attributeValue,
+      JSXText: t.content,
+      "JSXStartTag JSXStartCloseTag JSXSelfCloseEndTag JSXEndTag": t.angleBracket,
+      "JSXIdentifier JSXNameSpacedName": t.tagName,
+      "JSXAttribute/JSXIdentifier JSXAttribute/JSXNameSpacedName": t.attributeName,
     }),
     indentNodeProp.add({
       Block: delimitedIndent({ closing: "}" }),

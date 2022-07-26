@@ -48,8 +48,8 @@ export const App = () => {
   const [code, setCode] = useState("");
   const [asm, setAsm] = useState("");
 
-  const [optionHighlightPC, setOptionHighlighPC] = useState(true);
-  const [optionHighlightRanges, setOptionHighlighRanges] = useState(true);
+  const [optionHighlightPC, setOptionHighlighPC] = useState(false);
+  const [optionHighlightRanges, setOptionHighlighRanges] = useState(false);
 
   const [instructions, setInstructions] = useState<Instruction[]>([]);
 

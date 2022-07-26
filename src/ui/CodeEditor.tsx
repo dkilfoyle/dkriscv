@@ -21,6 +21,7 @@ import { SimpleCParser } from "../languages/simpleC/parser/antlr/SimpleCParser";
 import { SimpleCAstBuilder } from "../languages/simpleC/parser/astBuilder";
 import { AstCNode } from "../languages/simpleC/parser/astNodes";
 import { ErrorListener } from "../languages/simpleC/parser/ErrorListener";
+import { simpleASM } from "../languages/riv32asm/codemirror/simpleasm-lang";
 
 export interface HighlightRange extends DocPosition {
   col: string;
@@ -170,7 +171,9 @@ export const CodeEditor = (props: {
   const cmCodeRef = useRef<ReactCodeMirrorRef>({});
   const [codeChanged, setCodeChanged] = useState(false);
 
-  const extensions = [basicSetup, lintCode, lintGutter(), simpleC(), rangeHighlighter];
+  const extensions = [basicSetup, lintCode, lintGutter(), rangeHighlighter];
+  if (props.lang === "simpleC") extensions.push(simpleC());
+  if (props.lang === "simpleASM") extensions.push(simpleASM());
   if (props.updateBreakpoints) extensions.push(breakpointGutter);
 
   return (
