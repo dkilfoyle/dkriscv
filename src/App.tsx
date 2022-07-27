@@ -14,44 +14,38 @@ import { Instruction } from "./languages/riv32asm/parser/Instruction";
 import { AstCNode } from "./languages/simpleC/parser/astNodes";
 import { ActivityBar } from "./ui/ActivityBar";
 import { VscFiles, VscSettingsGear } from "react-icons/vsc";
-import "rc-tree/assets/index.css";
-import Tree from "rc-tree";
+
+import { useSettingsStore } from "./store/useSettingsStore";
+import { ActivityPanel } from "./ui/ActivityPanel";
 
 enableMapSet();
 
 const compiler = new ASMGenerator();
 const assembler = new MCGenerator();
 
-const fileTreeData = [
-  {
-    title: "Files",
-    children: [
-      { title: "hello.tc" },
-      { title: "fib.tc" },
-      { title: "sum.tc" },
-      { title: "mul.tc" },
-      { title: "sqrt.tc" },
-      { title: "blank.tc" },
-    ],
-  },
-];
-
 export const ComputerContext = React.createContext<{
   computer: Computer;
   breakpoints: Set<number>;
   render: React.DispatchWithoutAction;
 } | null>(null);
+
 const computer = new Computer();
+let instructions: Instruction[] = [];
+let n = 0;
 
 export const App = () => {
-  const [filename, setFilename] = useState("fib.tc");
+  console.log("render", n);
+  n = n + 1;
   const [code, setCode] = useState("");
   const [asm, setAsm] = useState("");
 
-  const [optionHighlightPC, setOptionHighlighPC] = useState(false);
-  const [optionHighlightRanges, setOptionHighlighRanges] = useState(false);
+  const [highlightPC, highlighRanges, filename] = useSettingsStore((state) => [
+    state.highlightPC,
+    state.highlightRanges,
+    state.filename,
+  ]);
 
-  const [instructions, setInstructions] = useState<Instruction[]>([]);
+  // const [instructions, setInstructions] = useState<Instruction[]>([]);
 
   const [asmLinePos, setAsmLinePos] = useState(0);
   const [codeLinePos, setCodeLinePos] = useState(0);
@@ -86,16 +80,17 @@ export const App = () => {
   }, [filename]);
 
   const updateCAst = (ast: AstCNode) => {
-    const { code: asm, rangeMap } = compiler.codegen(ast, code);
+    const { code: asm, rangeMap } = compiler.compile(ast, code);
     setAsm(asm);
     setCodeAsmRangeMap(rangeMap);
   };
 
   const updateAsmAst = (ast: ASMRootNode) => {
-    const { rangeMap, memWords, instructions } = assembler.assemble(ast);
-    console.log("updateAsmAst", instructions.length, memWords.length);
+    const { rangeMap, memWords, instructions: newinstructions } = assembler.assemble(ast);
+    console.log("updateAsmAst", newinstructions.length, memWords.length);
     setAsmRange(new CodeHighlightInfo());
-    setInstructions(instructions);
+    // setInstructions(instructions);
+    instructions = newinstructions;
     computer.resetAndLoad(memWords);
 
     setAsmMachineCodeRangeMap(rangeMap);
@@ -146,31 +141,34 @@ export const App = () => {
     const matches = codeAsmRangeMap.filter(
       (x) => asmLinePos >= x.right.startLine && asmLinePos <= x.right.endLine
     );
-    if (optionHighlightRanges) setRanges(matches);
+    if (highlighRanges) setRanges(matches);
     else setRanges([emptyHighlightRange()]);
-  }, [asmLinePos, codeAsmRangeMap, optionHighlightRanges]);
+  }, [asmLinePos, codeAsmRangeMap, highlighRanges]);
 
   useEffect(() => {
     // find the rangemap entry for the current asm position
     const matches = codeAsmRangeMap.filter(
       (x) => codeLinePos >= x.left.startLine && codeLinePos <= x.left.endLine
     );
-    if (optionHighlightRanges) setRanges(matches);
+    if (highlighRanges) setRanges(matches);
     else setRanges([emptyHighlightRange()]);
-  }, [codeLinePos, codeAsmRangeMap, optionHighlightRanges]);
+  }, [codeLinePos, codeAsmRangeMap, highlighRanges]);
 
-  useEffect(() => {
-    // find the rangemap entry for the current asm position
-    const codeRange = asmMachineCodeRangeMap.find(
-      (x) => asmLinePos >= x.left.startLine && asmLinePos <= x.left.endLine
-    );
-    if (codeRange) {
-      // setMemRange((arr) => [...arr, codeRange.right]);
-    }
-  }, [asmLinePos, asmMachineCodeRangeMap]);
+  // useEffect(() => {
+  //   // find the rangemap entry for the current asm position
+  //   const codeRange = asmMachineCodeRangeMap.find(
+  //     (x) => asmLinePos >= x.left.startLine && asmLinePos <= x.left.endLine
+  //   );
+  //   if (codeRange) {
+  //     // setMemRange((arr) => [...arr, codeRange.right]);
+  //   }
+  // }, [asmLinePos, asmMachineCodeRangeMap]);
+
+  const [pc, render] = useReducer((p) => !p, false);
 
   useEffect(() => {
     const i = instructions[computer.cpu.pcLast / 4];
+    console.log("useEffect: setCodeRange and setAsmRange", i);
     if (i) {
       // find the instruction matching pcLast - this has the corresponding asm pos stored in pos
       // look up asm pos (right) in codeAsmRangeMap to get the code pos (left)
@@ -180,7 +178,7 @@ export const App = () => {
             // .slice()
             // .reverse()
             .find((x) => i.pos.startLine >= x.right.startLine && i.pos.endLine <= x.right.endLine);
-          if (codeRange && optionHighlightPC) {
+          if (codeRange && highlightPC) {
             draft.pc = {
               ...codeRange.left,
               col: "#ede7f6",
@@ -200,47 +198,12 @@ export const App = () => {
 
       setAsmRange(
         produce((draft) => {
-          if (optionHighlightPC) draft.pc = { ...i.pos, col: "#ede7f6" };
+          if (highlightPC) draft.pc = { ...i.pos, col: "#ede7f6" };
           else draft.pc = { startLine: 0, endLine: 0, col: "red" };
         })
       );
     }
-  }, [instructions, codeAsmRangeMap, optionHighlightPC, computer.cpu.pcLast]);
-
-  const [, render] = useReducer((p) => !p, false);
-
-  const activityPanel = () => {
-    switch (activity) {
-      case 0: // files
-        return (
-          <Tree
-            treeData={fileTreeData as any}
-            expandAction="click"
-            fieldNames={{ key: "title" }}
-            showLine
-            onSelect={(keys) => {
-              const x = keys[0].toString();
-              if (x !== "Files") setFilename(x);
-            }}></Tree>
-        );
-      case 1: // settings
-        return (
-          <VStack alignItems="start">
-            <h2>Highlight</h2>
-            <Checkbox
-              isChecked={optionHighlightRanges}
-              onChange={() => setOptionHighlighRanges(!optionHighlightRanges)}>
-              Ranges
-            </Checkbox>
-            <Checkbox
-              isChecked={optionHighlightPC}
-              onChange={() => setOptionHighlighPC(!optionHighlightPC)}>
-              PC
-            </Checkbox>
-          </VStack>
-        );
-    }
-  };
+  }, [codeAsmRangeMap, highlightPC, pc]);
 
   return (
     <ChakraProvider theme={theme}>
@@ -255,7 +218,9 @@ export const App = () => {
         <ComputerContext.Provider value={{ computer, breakpoints, render }}>
           <ReflexContainer orientation="vertical">
             <ReflexElement size={activity === -1 ? 0 : 100}>
-              <Box p={2}>{activityPanel()}</Box>
+              <Box p={2}>
+                <ActivityPanel activity={activity}></ActivityPanel>
+              </Box>
             </ReflexElement>
             <ReflexSplitter />
             <ReflexElement className="c-pane">

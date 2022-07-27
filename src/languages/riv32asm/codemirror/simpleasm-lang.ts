@@ -16,9 +16,11 @@ let parserWithMetadata = parser.configure({
   props: [
     styleTags({
       Section: t.controlKeyword,
-      // Id: t.typeName,
+      Data: t.keyword,
+      Align: t.keyword,
+      String: t.string,
       "( )": t.paren,
-      // Register: t.string,
+      Offset: t.bool,
       Immediate: t.number,
       Label: t.function(t.definition(t.variableName)),
       Register: t.typeName,

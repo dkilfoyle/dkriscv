@@ -79,7 +79,7 @@ export class ASMGenerator {
     this.emitter.emitLW(rd, R.SP, 0, comment);
   }
 
-  codegen(root: AstCNode, src: string) {
+  compile(root: AstCNode, src: string) {
     if (!(root instanceof AstRepl)) throw new Error();
     this.reset();
     this.src = src;
