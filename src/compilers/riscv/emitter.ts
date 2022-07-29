@@ -59,7 +59,7 @@ export class RiscvEmmiter {
     this.nextLine = this.nextLine + 1;
   }
   emitIns(instruction: string, comment?: string) {
-    if (comment) this.emit("  " + instruction.padEnd(40) + "# " + comment);
+    if (comment) this.emit("  " + instruction.padEnd(32) + "# " + comment);
     else this.emit("  " + instruction);
   }
   emitComment(comment: string) {
@@ -67,7 +67,7 @@ export class RiscvEmmiter {
   }
 
   emitLocalLabel(label: string, comment?: string) {
-    if (comment) this.emit((label + ":").padEnd(42) + "# " + comment);
+    if (comment) this.emit((label + ":").padEnd(34) + "# " + comment);
     else this.emit(label + ":");
   }
   emitGlobalLabel(label: string) {

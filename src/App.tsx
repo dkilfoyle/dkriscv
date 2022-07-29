@@ -22,6 +22,8 @@ import {
   emptyHighlightRange,
   filterRangeMap,
   findRangeMap,
+  getHighlightColor,
+  highlightColors,
   RangeMap,
 } from "./utils/antlr";
 
@@ -117,12 +119,18 @@ export const App = () => {
   function setRanges(matches) {
     setCodeRange(
       produce((draft) => {
-        draft.code = matches.map((m) => ({ ...m.left })); //, col: "#d4fafa" }));
+        draft.code = matches
+          .map((m, i) => ({ ...m.left, col: getHighlightColor(i) }))
+          .slice()
+          .reverse(); //, col: "#d4fafa" }));
       })
     );
     setAsmRange(
       produce((draft) => {
-        draft.code = matches.map((m) => ({ ...m.right })); //, col: "#d4fafa" }));
+        draft.code = matches
+          .map((m, i) => ({ ...m.right, col: getHighlightColor(i) }))
+          .slice()
+          .reverse(); //, col: "#d4fafa" }));
       })
     );
   }
@@ -144,23 +152,25 @@ export const App = () => {
   // highlight instructions matching the highlighted asm range
   useEffect(() => {
     if (highlightRanges && asmMachineCodeRangeMap.length) {
-      const colors = ["#4DD0E1", "#4DD0E1", "#B2EBF2", "#E0F7FA"].reverse();
       setMemRange(
         produce((draft) => {
           draft.code = [];
-          asmRange.code.forEach((aRange, i) => {
-            // for the current range in asm find overlapping instructions
-            const insts = asmMachineCodeRangeMap
-              .filter(
-                (rm) => rm.left.startLine >= aRange.startLine && rm.left.endLine <= aRange.endLine
-              )
-              .map((rm) => rm.right.startLine);
-            draft.code.push({
-              startLine: Math.min(...insts),
-              endLine: Math.max(...insts),
-              col: colors[Math.min(i, colors.length - 1)],
+          asmRange.code
+            .slice()
+            .reverse()
+            .forEach((aRange, i) => {
+              // for the current range in asm find overlapping instructions
+              const insts = asmMachineCodeRangeMap
+                .filter(
+                  (rm) => rm.left.startLine >= aRange.startLine && rm.left.endLine <= aRange.endLine
+                )
+                .map((rm) => rm.right.startLine);
+              draft.code.push({
+                startLine: Math.min(...insts),
+                endLine: Math.max(...insts),
+                col: highlightColors[Math.min(i, highlightColors.length - 1)],
+              });
             });
-          });
           console.log(draft.code);
         })
       );

@@ -1,5 +1,11 @@
 import { immerable } from "immer";
 
+export const highlightColors = ["#4DD0E1", "#80DEEA", "#B2EBF2", "#E0F7FA"].reverse();
+
+export const getHighlightColor = (i) => {
+  return highlightColors[Math.min(i, highlightColors.length)];
+};
+
 export interface DocPosition {
   startLine: number;
   startCol?: number;

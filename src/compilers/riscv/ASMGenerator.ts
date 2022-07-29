@@ -365,6 +365,7 @@ export class ASMGenerator {
   // }
 
   visitIf(node: AstIf) {
+    const start = this.emitter.nextLine;
     const thenLabel = this.newLabel("then");
     const exitLabel = this.newLabel("exitIf");
 
@@ -383,9 +384,24 @@ export class ASMGenerator {
     else this.visitStatement(node.thenBlock);
 
     this.emitter.emitLocalLabel(exitLabel);
+
+    this.rangeMap.push({
+      left: {
+        startLine: node.pos.startLine,
+        endLine: node.pos.endLine,
+        col: "red",
+      },
+      right: {
+        startLine: start,
+        endLine: this.emitter.nextLine - 1,
+        col: "blue",
+      },
+      name: "while",
+    });
   }
 
   visitWhile(node: AstWhile) {
+    const start = this.emitter.nextLine;
     const testLabel = this.newLabel("whiletest");
     const exitLabel = this.newLabel("exitwhile");
 
@@ -399,6 +415,19 @@ export class ASMGenerator {
     this.emitter.emitJ(testLabel, "loop back to test");
 
     this.emitter.emitLocalLabel(exitLabel);
+    this.rangeMap.push({
+      left: {
+        startLine: node.pos.startLine,
+        endLine: node.pos.endLine,
+        col: "red",
+      },
+      right: {
+        startLine: start,
+        endLine: this.emitter.nextLine - 1,
+        col: "blue",
+      },
+      name: "while",
+    });
   }
 
   // =================================================================================================================
