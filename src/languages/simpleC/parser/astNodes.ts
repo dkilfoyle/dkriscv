@@ -103,8 +103,6 @@ export class AstCNode {
         startCol: ctx.start.charPositionInLine,
         endLine: ctx.stop.line,
         endCol: ctx.stop.charPositionInLine,
-        startAntlrPos: ctx.start.startIndex,
-        endAntlrPos: ctx.stop.stopIndex,
       };
     } else {
       this.pos = getEmptyDocPosition();

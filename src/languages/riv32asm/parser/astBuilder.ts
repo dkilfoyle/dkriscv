@@ -173,10 +173,6 @@ export class SimpleASMAstBuilder
       startCol: ctx.start.charPositionInLine,
       endLine: ctx.stop.line,
       endCol: ctx.stop.charPositionInLine,
-      startAntlrPos: ctx.start.startIndex,
-      endAntlrPos: ctx.stop.stopIndex,
-      startCMPos: -1,
-      endCMPos: -1,
     };
   }
 

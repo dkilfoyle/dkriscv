@@ -3,8 +3,8 @@ import { IR } from "./ir";
 import { Ram } from "./ram";
 import { Regs } from "./regs";
 import { Stack } from "./stack";
-import { CodeHighlightInfo } from "../CodeEditor";
 import { DataPath } from "./datapath";
+import { CodeHighlightInfo } from "../../utils/antlr";
 
 export const Schematic = (props: { memoryHighlightRanges: CodeHighlightInfo }) => {
   return (

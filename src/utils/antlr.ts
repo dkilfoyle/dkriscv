@@ -1,12 +1,10 @@
+import { immerable } from "immer";
+
 export interface DocPosition {
   startLine: number;
   startCol?: number;
   endLine: number;
   endCol?: number;
-  startAntlrPos?: number;
-  endAntlrPos?: number;
-  startCMPos?: number;
-  endCMPos?: number;
 }
 
 export const getEmptyDocPosition = () => {
@@ -15,10 +13,6 @@ export const getEmptyDocPosition = () => {
     startCol: 0,
     endLine: 0,
     endCol: 0,
-    startAntlrPos: 0,
-    endAntlrPos: 0,
-    startCMPos: 0,
-    endCMPos: 0,
   };
 };
 
@@ -29,3 +23,54 @@ export const loadTextFile = async (filename) => {
       return textContent;
     });
 };
+
+export const emptyHighlightRange: () => HighlightRange = () => ({
+  startLine: 0,
+  endLine: 0,
+  col: "red",
+});
+
+export interface HighlightRange extends DocPosition {
+  col: string;
+  filename?: string;
+}
+
+export interface RangeMapEntry {
+  left: HighlightRange;
+  right: HighlightRange;
+  name?: string;
+}
+export type RangeMap = RangeMapEntry[];
+
+export const findRangeMap = (
+  rangeMap: RangeMap,
+  criteria: { start: number; end?: number; side: "left" | "right" }
+) => {
+  const end = criteria.end || criteria.start;
+  return rangeMap.find(
+    (x) => criteria.start >= x[criteria.side].startLine && end <= x[criteria.side].endLine
+  );
+};
+
+export const filterRangeMap = (
+  rangeMap: RangeMap,
+  criteria: { start: number; end?: number; side: "left" | "right" }
+) => {
+  const end = criteria.end || criteria.start;
+  return rangeMap.filter(
+    (x) => criteria.start >= x[criteria.side].startLine && end <= x[criteria.side].endLine
+  );
+};
+
+export class CodeHighlightInfo {
+  [immerable] = true;
+  pc: HighlightRange;
+  code: HighlightRange[];
+  constructor() {
+    this.pc = { startLine: 0, endLine: 0, col: "transparent" };
+    this.code = [];
+  }
+  toArray() {
+    return [...this.code, this.pc];
+  }
+}

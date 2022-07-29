@@ -19,7 +19,7 @@ import {
 } from "../../languages/simpleC/parser/astNodes";
 import { Scope, ScopeStack } from "../../languages/simpleC/parser/scopeStack";
 import { library } from "../../linker/library";
-import { RangeMap } from "../../ui/CodeEditor";
+import { RangeMap } from "../../utils/antlr";
 import { R, RiscvEmmiter } from "./emitter";
 import { LocalScope, LocalScopeStack, LocalVariable } from "./LocalScope";
 

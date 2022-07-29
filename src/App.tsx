@@ -1,12 +1,12 @@
 import React, { useEffect, useReducer, useState } from "react";
 import "react-reflex/styles.css";
-import { CodeEditor, CodeHighlightInfo, HighlightRange, RangeMap } from "./ui/CodeEditor";
+import { CodeEditor } from "./ui/editor/CodeEditor";
 import { ASMGenerator } from "./compilers/riscv/ASMGenerator";
 import { MCGenerator } from "./assemblers/riscv/MCGenerator";
 import { Computer } from "./simulator/System";
 import "./app.css";
 import produce, { enableMapSet } from "immer";
-import { ChakraProvider, theme, Box, Flex, VStack, Checkbox } from "@chakra-ui/react";
+import { ChakraProvider, theme, Box, Flex } from "@chakra-ui/react";
 import { ReflexContainer, ReflexElement, ReflexSplitter } from "react-reflex";
 import { Schematic } from "./ui/schematic/schematic";
 import { ASMRootNode } from "./languages/riv32asm/parser/astNodes";
@@ -17,6 +17,13 @@ import { VscFiles, VscSettingsGear } from "react-icons/vsc";
 
 import { useSettingsStore } from "./store/useSettingsStore";
 import { ActivityPanel } from "./ui/ActivityPanel";
+import {
+  CodeHighlightInfo,
+  emptyHighlightRange,
+  filterRangeMap,
+  findRangeMap,
+  RangeMap,
+} from "./utils/antlr";
 
 enableMapSet();
 
@@ -39,14 +46,13 @@ export const App = () => {
   const [code, setCode] = useState("");
   const [asm, setAsm] = useState("");
 
-  const [highlightPC, highlighRanges, filename] = useSettingsStore((state) => [
+  const [highlightPC, highlightRanges, filename] = useSettingsStore((state) => [
     state.highlightPC,
     state.highlightRanges,
     state.filename,
   ]);
 
   // const [instructions, setInstructions] = useState<Instruction[]>([]);
-
   const [asmLinePos, setAsmLinePos] = useState(0);
   const [codeLinePos, setCodeLinePos] = useState(0);
 
@@ -60,16 +66,6 @@ export const App = () => {
   const [asmMachineCodeRangeMap, setAsmMachineCodeRangeMap] = useState<RangeMap>([]);
 
   const [activity, setActivity] = useState(0);
-
-  const findRangeMap = (
-    rangeMap: RangeMap,
-    criteria: { start: number; end?: number; side: "left" | "right" }
-  ) => {
-    const end = criteria.end || criteria.start;
-    return rangeMap.find(
-      (x) => criteria.start >= x[criteria.side].startLine && end <= x[criteria.side].endLine
-    );
-  };
 
   useEffect(() => {
     fetch(require("./languages/simpleC/examples/" + filename))
@@ -116,11 +112,7 @@ export const App = () => {
       );
   };
 
-  const emptyHighlightRange: () => HighlightRange = () => ({
-    startLine: 0,
-    endLine: 0,
-    col: "red",
-  });
+  // Cursor position range highlighting
 
   function setRanges(matches) {
     setCodeRange(
@@ -135,34 +127,45 @@ export const App = () => {
     );
   }
 
-  // response to change of asm position -> set code/asm highlight, preserve pc
+  // highlight code and asm based on asm cursor
   useEffect(() => {
-    // find the rangemap entry for the current asm position
-    const matches = codeAsmRangeMap.filter(
-      (x) => asmLinePos >= x.right.startLine && asmLinePos <= x.right.endLine
-    );
-    if (highlighRanges) setRanges(matches);
+    if (highlightRanges)
+      setRanges(filterRangeMap(codeAsmRangeMap, { start: asmLinePos, side: "right" }));
     else setRanges([emptyHighlightRange()]);
-  }, [asmLinePos, codeAsmRangeMap, highlighRanges]);
+  }, [asmLinePos, codeAsmRangeMap, highlightRanges]);
 
+  // highlight code and asm based on code cursor
   useEffect(() => {
-    // find the rangemap entry for the current asm position
-    const matches = codeAsmRangeMap.filter(
-      (x) => codeLinePos >= x.left.startLine && codeLinePos <= x.left.endLine
-    );
-    if (highlighRanges) setRanges(matches);
-    else setRanges([emptyHighlightRange()]);
-  }, [codeLinePos, codeAsmRangeMap, highlighRanges]);
+    if (highlightRanges)
+      setRanges(filterRangeMap(codeAsmRangeMap, { start: codeLinePos, side: "left" }));
+    else setRanges([]);
+  }, [codeLinePos, codeAsmRangeMap, highlightRanges]);
 
-  // useEffect(() => {
-  //   // find the rangemap entry for the current asm position
-  //   const codeRange = asmMachineCodeRangeMap.find(
-  //     (x) => asmLinePos >= x.left.startLine && asmLinePos <= x.left.endLine
-  //   );
-  //   if (codeRange) {
-  //     // setMemRange((arr) => [...arr, codeRange.right]);
-  //   }
-  // }, [asmLinePos, asmMachineCodeRangeMap]);
+  // highlight instructions matching the highlighted asm range
+  useEffect(() => {
+    if (highlightRanges && asmMachineCodeRangeMap.length) {
+      const colors = ["#4DD0E1", "#4DD0E1", "#B2EBF2", "#E0F7FA"].reverse();
+      setMemRange(
+        produce((draft) => {
+          draft.code = [];
+          asmRange.code.forEach((aRange, i) => {
+            // for the current range in asm find overlapping instructions
+            const insts = asmMachineCodeRangeMap
+              .filter(
+                (rm) => rm.left.startLine >= aRange.startLine && rm.left.endLine <= aRange.endLine
+              )
+              .map((rm) => rm.right.startLine);
+            draft.code.push({
+              startLine: Math.min(...insts),
+              endLine: Math.max(...insts),
+              col: colors[Math.min(i, colors.length - 1)],
+            });
+          });
+          console.log(draft.code);
+        })
+      );
+    }
+  }, [asmMachineCodeRangeMap, asmRange.code, highlightRanges]);
 
   const [pc, render] = useReducer((p) => !p, false);
 
@@ -247,7 +250,6 @@ export const App = () => {
             <ReflexSplitter />
 
             <ReflexElement className="sim-pane">
-              {/* <Schematic memoryHighlightRanges={memRange} asmBreakpoints={breakpoints}></Schematic> */}
               <Schematic memoryHighlightRanges={memRange}></Schematic>
             </ReflexElement>
           </ReflexContainer>

@@ -1,9 +1,9 @@
 import { Table, TableContainer, Td, Th, Tr, Tbody, Thead, HStack } from "@chakra-ui/react";
 import { useContext } from "react";
 import { ComputerContext } from "../../App";
+import { CodeHighlightInfo } from "../../utils/antlr";
 import { getBytes } from "../../utils/bits";
 import { useFormat } from "../../utils/useFormat";
-import { CodeHighlightInfo } from "../CodeEditor";
 
 export const Ram = (props: { highlightRanges?: CodeHighlightInfo }) => {
   const style = (i) => {

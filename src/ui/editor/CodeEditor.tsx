@@ -1,52 +1,26 @@
 import { lintGutter, linter } from "@codemirror/lint";
-import { minimalSetup, basicSetup } from "codemirror";
+import { basicSetup } from "codemirror";
 import { EditorView } from "@codemirror/view";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import { CharStreams, CommonTokenStream, Lexer } from "antlr4ts";
 import { useEffect, useRef, useState } from "react";
-import { simpleC } from "../languages/simpleC/codemirror/simplec-lang";
+import { simpleC } from "../../languages/simpleC/codemirror/simplec-lang";
 import { Decoration } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
 
 import { ViewPlugin, DecorationSet, ViewUpdate } from "@codemirror/view";
-import { immerable } from "immer";
+import { SimpleASMLexer } from "../../languages/riv32asm/parser/antlr/SimpleASMLexer";
+import { SimpleASMParser } from "../../languages/riv32asm/parser/antlr/SimpleASMParser";
+import { SimpleASMAstBuilder } from "../../languages/riv32asm/parser/astBuilder";
+import { ASMRootNode } from "../../languages/riv32asm/parser/astNodes";
+import { SimpleCLexer } from "../../languages/simpleC/parser/antlr/SimpleCLexer";
+import { SimpleCParser } from "../../languages/simpleC/parser/antlr/SimpleCParser";
+import { SimpleCAstBuilder } from "../../languages/simpleC/parser/astBuilder";
+import { AstCNode } from "../../languages/simpleC/parser/astNodes";
+import { ErrorListener } from "../../languages/simpleC/parser/ErrorListener";
+import { simpleASM } from "../../languages/riv32asm/codemirror/simpleasm-lang";
+import { CodeHighlightInfo } from "../../utils/antlr";
 import { breakpointEffect, breakpointGutter } from "./breakpoint";
-import { DocPosition } from "../utils/antlr";
-import { SimpleASMLexer } from "../languages/riv32asm/parser/antlr/SimpleASMLexer";
-import { SimpleASMParser } from "../languages/riv32asm/parser/antlr/SimpleASMParser";
-import { SimpleASMAstBuilder } from "../languages/riv32asm/parser/astBuilder";
-import { ASMRootNode } from "../languages/riv32asm/parser/astNodes";
-import { SimpleCLexer } from "../languages/simpleC/parser/antlr/SimpleCLexer";
-import { SimpleCParser } from "../languages/simpleC/parser/antlr/SimpleCParser";
-import { SimpleCAstBuilder } from "../languages/simpleC/parser/astBuilder";
-import { AstCNode } from "../languages/simpleC/parser/astNodes";
-import { ErrorListener } from "../languages/simpleC/parser/ErrorListener";
-import { simpleASM } from "../languages/riv32asm/codemirror/simpleasm-lang";
-
-export interface HighlightRange extends DocPosition {
-  col: string;
-  filename?: string;
-}
-
-export interface RangeMapEntry {
-  left: HighlightRange;
-  right: HighlightRange;
-  name?: string;
-}
-export type RangeMap = RangeMapEntry[];
-
-export class CodeHighlightInfo {
-  [immerable] = true;
-  pc: HighlightRange;
-  code: HighlightRange[];
-  constructor() {
-    this.pc = { startLine: 0, endLine: 0, col: "transpartent" };
-    this.code = [];
-  }
-  toArray() {
-    return [...this.code, this.pc];
-  }
-}
 
 const baseTheme = EditorView.baseTheme({
   "&light .cm-zebraStripe": { backgroundColor: "#d4fafa" },

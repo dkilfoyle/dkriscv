@@ -2,7 +2,7 @@ import { SymbolTable } from "../../languages/riv32asm/parser/astBuilder";
 import { ASMRootNode } from "../../languages/riv32asm/parser/astNodes";
 import { Instruction } from "../../languages/riv32asm/parser/Instruction";
 import { library } from "../../linker/library";
-import { RangeMap } from "../../ui/CodeEditor";
+import { RangeMap } from "../../utils/antlr";
 
 export class MCGenerator {
   rangeMap: RangeMap;
