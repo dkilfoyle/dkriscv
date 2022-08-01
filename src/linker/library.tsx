@@ -35,7 +35,6 @@ Object.keys(library).map((filename) => {
       const parser = new SimpleASMParser(tokenStream);
       const builder = new SimpleASMAstBuilder();
       const errorListener = new ErrorListener();
-      const assembler = new MCGenerator();
 
       lexer.removeErrorListeners();
       lexer.addErrorListener(errorListener);
@@ -44,7 +43,10 @@ Object.keys(library).map((filename) => {
 
       let tree = parser.program();
       if (errorListener.errors.length === 0) {
-        library[filename].asmAst = builder.visit(tree);
+        const res = builder.visitTree(tree);
+        if (res.errors.length) {
+          console.error("Error assembling library code ", filename, res.errors);
+        } else library[filename].asmAst = res.root as ASMRootNode;
       } else console.log(errorListener.errors);
     });
 });

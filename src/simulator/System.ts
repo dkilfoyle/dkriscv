@@ -8,6 +8,8 @@ export class Computer {
   bus: Bus;
   cpu: Processor;
   mem: Memory;
+  memWords: number[];
+
   constructor() {
     this.bus = new Bus();
     this.cpu = new Processor(32, this.bus);
@@ -20,7 +22,11 @@ export class Computer {
   }
   resetAndLoad(memWords: number[]) {
     this.reset();
+    this.memWords = [...memWords];
     memWords.forEach((word, i) => this.mem.write(i * 4, 4, word));
+  }
+  resetAndReload() {
+    this.resetAndLoad(this.memWords);
   }
   step() {
     if (this.cpu.state === "fetch") this.cpu.fetch();

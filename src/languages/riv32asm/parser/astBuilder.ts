@@ -22,6 +22,8 @@ import { Instruction } from "./Instruction";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
 import { DocPosition } from "../../../utils/antlr";
 import { ASMRootNode, DataSection } from "./astNodes";
+import { AstBuildResult } from "../../simpleC/parser/astBuilder";
+import { BreadcrumbLink } from "@chakra-ui/react";
 
 export const registerNumbers = {
   zero: 0,
@@ -148,17 +150,26 @@ export class SimpleASMAstBuilder
   }
 
   protected defaultResult() {
-    return { instructions: [], symbols: {}, labels: {}, dataSection: undefined, globals: [] };
+    return {
+      instructions: [],
+      symbols: {},
+      labels: {},
+      dataSection: new DataSection(),
+      globals: [],
+    };
   }
 
-  visit(tree: ParseTree): ASMRootNode {
+  visitTree(tree: ParseTree): AstBuildResult {
     tree.accept(this);
     return {
-      instructions: this.instructions,
-      dataSection: this.dataSection,
-      labels: this.labels,
-      symbols: this.symbols,
-      globals: this.globals,
+      root: {
+        instructions: this.instructions,
+        dataSection: this.dataSection,
+        labels: this.labels,
+        symbols: this.symbols,
+        globals: this.globals,
+      },
+      errors: [],
     };
   }
 
@@ -277,15 +288,110 @@ export class SimpleASMAstBuilder
       return;
     }
 
-    const rop = pseudos[op];
-    if (pseudos[op].rev_rs)
-      this.instructions.push(
-        new Instruction(rop.name, { ...{ rs2, rs1, rd, imm, offset }, ...rop }, this.getPos(ctx))
-      );
-    else
-      this.instructions.push(
-        new Instruction(rop.name, { ...{ rs1, rs2, rd, imm, offset }, ...rop }, this.getPos(ctx))
-      );
+    let params = {};
+    let pop = "";
+
+    switch (op) {
+      case "beqz":
+        pop = "beq";
+        params = { rs1, rs2: 0, offset };
+        break;
+      case "bnez":
+        pop = "bne";
+        params = { rs1, rs2: 0, offset };
+        break;
+      case "blez":
+        pop = "bge";
+        params = { rs1: 0, rs2: rs1, offset };
+        break;
+      case "bgez":
+        pop = "bge";
+        params = { rs1, rs2: 0, offset };
+        break;
+      case "bltz":
+        pop = "blt";
+        params = { rs1, rs2: 0, offset };
+        break;
+      case "bgtz":
+        pop = "blt";
+        params = { rs1: 0, rs2: rs1, offset };
+        break;
+      case "bgt":
+        pop = "blt";
+        params = { rs1: rs2, rs2: rs1, offset };
+        break;
+      case "ble":
+        pop = "bge";
+        params = { rs1: rs2, rs2: rs1, offset };
+        break;
+      case "bgtu":
+        pop = "bltu";
+        params = { rs1: rs2, rs2: rs1, offset };
+        break;
+      case "bleu":
+        pop = "bgeu";
+        params = { rs1: rs2, rs2: rs1, offset };
+        break;
+      // load pseudo-instructions
+      case "mv":
+        pop = "addi";
+        params = { rd, rs1, imm: 0 };
+        break;
+      case "li":
+        pop = "addi";
+        params = { rd, rs1: 0, imm };
+        break;
+      // set pseudos
+      case "seqz":
+        pop = "sltiu";
+        params = { rd, rs1, imm: 1 };
+        break;
+      case "snez":
+        pop = "sltu";
+        params = { rd, rs1: 0, rs: rs1 };
+        break;
+      case "sltz":
+        pop = "slt";
+        params = { rd, rs1, rs2: 0 };
+        break;
+      case "sgtz":
+        pop = "slt";
+        params = { rd, rs1: 0, rs2: rs1 };
+        break;
+      // logical pseudos
+      case "not":
+        pop = "xori";
+        params = { rd, rs1, imm: -1 };
+        break;
+      case "neg":
+        pop = "sub";
+        params = { rd, rs1: 0, rs2: rs1 };
+        break;
+      // jump pseudos
+      case "ret":
+        pop = "jalr";
+        params = { rd: 0, rs1: 1, imm: 0 };
+        break;
+      case "call":
+        pop = "jalr";
+        params = { rd: 1, rs1: 1, offset };
+        break;
+      case "j":
+        pop = "jal";
+        params = { rd: 0, offset };
+        break;
+      case "jr":
+        pop = "jalr";
+        params = { rd: 0, rs1, imm: 0 };
+        break;
+      case "jal":
+        pop = "jal";
+        params = { rd: 1, offset };
+        break;
+      default:
+        debugger;
+    }
+    this.instructions.push(new Instruction(pop, params, this.getPos(ctx)));
   }
 
   visitGlobal(ctx: GlobalContext) {

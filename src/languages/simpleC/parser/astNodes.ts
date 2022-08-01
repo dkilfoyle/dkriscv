@@ -601,8 +601,8 @@ export class AstBinaryExpression extends AstExpression {
     return `${this.lhs.toCode()} ${this.op} ${this.rhs.toCode()}`;
   }
   returnType() {
-    if (["+", "-", "*", "/", "%", "^"].includes(this.op)) return "int"; // TODO - should check type of LHS and RHS to see if int or float
-    if (["<=", "<", ">=", ">", "===", "!==", "&&", "||"].includes(this.op)) return "bool";
+    if (["+", "-", "*", "/", "%", "^", "=="].includes(this.op)) return "int"; // TODO - should check type of LHS and RHS to see if int or float
+    if (["<=", "<", ">=", ">", "==", "!=", "&&", "||"].includes(this.op)) return "bool";
     return "unknown";
   }
   execute() {
@@ -881,11 +881,11 @@ ${this.body ? this.body.toString(2) : "  StdLib"}
   }
 }
 
-export class AstUndeclaredError extends AstIdentifierDeclaration {
-  getInstance() {
-    return new ErrorInstance();
-  }
-  toString(indent = 0) {
-    return this.indent(indent, `Symbol ${this.id} undeclared`);
-  }
-}
+// export class AstUndeclaredError extends AstIdentifierDeclaration {
+//   getInstance() {
+//     return new ErrorInstance();
+//   }
+//   toString(indent = 0) {
+//     return this.indent(indent, `Symbol ${this.id} undeclared`);
+//   }
+// }

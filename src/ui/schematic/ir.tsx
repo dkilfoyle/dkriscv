@@ -61,6 +61,11 @@ export const IR = () => {
     render();
   };
 
+  const handleReset = () => {
+    computer.resetAndReload();
+    render();
+  };
+
   const handleRun = () => {
     while (!breakpoints.has(computer.cpu.pc) && !computer.cpu.isExit) {
       computer.step();
@@ -77,7 +82,7 @@ export const IR = () => {
               <HStack>
                 <ButtonGroup size="xs" isAttached variant="solid">
                   <IconButton
-                    onClick={handleStep}
+                    onClick={handleReset}
                     size="sm"
                     icon={<BiReset />}
                     aria-label={""}></IconButton>

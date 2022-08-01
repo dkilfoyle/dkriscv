@@ -1,6 +1,5 @@
 import { SymbolTable } from "../../languages/riv32asm/parser/astBuilder";
 import { ASMRootNode } from "../../languages/riv32asm/parser/astNodes";
-import { Instruction } from "../../languages/riv32asm/parser/Instruction";
 import { library } from "../../linker/library";
 import { RangeMap } from "../../utils/antlr";
 
@@ -24,10 +23,10 @@ export class MCGenerator {
       console.error(`textStart ${this.textStart} is not 4 byte aligned for ${filename}`);
       throw new Error();
     }
-    console.log(
-      `Encoding ${filename}: textStart: ${this.textStart}, instructions: ${root.instructions.length}, data: ${root.dataSection.pointer}`,
-      symbols
-    );
+    // console.log(
+    //   `Encoding ${filename}: textStart: ${this.textStart}, instructions: ${root.instructions.length}, data: ${root.dataSection.pointer}`,
+    //   symbols
+    // );
 
     // encode each instruction and add encoded value to bytecodes
     // map the machinecode position to asm source position
@@ -40,9 +39,8 @@ export class MCGenerator {
     });
 
     // add datasection to end of textsection
-    console.log("pushing data:", root.dataSection.getWords());
+    // console.log("pushing data:", root.dataSection.getWords());
     this.memWords.push(...root.dataSection.getWords());
-    console.log(this.memWords.length);
   }
 
   addSymbols(root: ASMRootNode, filename: string) {

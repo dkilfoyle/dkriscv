@@ -1,0 +1,12 @@
+// test arithmetic functions
+
+void main () {
+  int x = 2;
+  int y = 3;
+  print_int(x+y == 5);
+  print_int(x*y == 6);
+  print_int(x-y == -1);
+  print_int(y-x == 1);
+  print_int(y/x == 1);
+  print_int(8%3 == 2);
+}

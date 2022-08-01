@@ -1,4 +1,4 @@
-// Generated from c:\code\dkriscv\src\languages\simpleC\SimpleC.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from c:\code\dkriscv\src\languages\simpleC\parser\SimpleC.g4 by ANTLR 4.9.0-SNAPSHOT
 
 
 import { ATN } from "antlr4ts/atn/ATN";

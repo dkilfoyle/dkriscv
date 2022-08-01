@@ -1,0 +1,17 @@
+// Generate first 10 fibonacci numbers
+// Demonstrates recursive calls
+
+int fib(int n) {
+  // 0 1 (0 + 1)
+  if (n < 2)
+    return n;
+  else
+    return fib(n - 2) + fib(n - 1);
+}
+
+int main() {
+  for (int i = 0; i < 10; i = i + 1) {
+    print_int(fib(i));
+  }
+  print_string("Done!");
+}

@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, useState } from "react";
+import React, { useCallback, useEffect, useReducer, useState } from "react";
 import "react-reflex/styles.css";
 import { CodeEditor } from "./ui/editor/CodeEditor";
 import { ASMGenerator } from "./compilers/riscv/ASMGenerator";
@@ -43,8 +43,11 @@ let instructions: Instruction[] = [];
 let n = 0;
 
 export const App = () => {
-  console.log("render", n);
-  n = n + 1;
+  // useEffect(() => {
+  //   console.log("render", n);
+  //   n = n + 1;
+  // });
+
   const [code, setCode] = useState("");
   const [asm, setAsm] = useState("");
 
@@ -77,15 +80,20 @@ export const App = () => {
       });
   }, [filename]);
 
-  const updateCAst = (ast: AstCNode) => {
-    const { code: asm, rangeMap } = compiler.compile(ast, code);
-    setAsm(asm);
-    setCodeAsmRangeMap(rangeMap);
+  const updateCAst = (ast: AstCNode | null) => {
+    console.log("UpdateCAst", ast);
+    if (ast) {
+      const { code: asm, rangeMap } = compiler.compile(ast, code);
+      setAsm(asm);
+      setCodeAsmRangeMap(rangeMap);
+    } else {
+      setAsm("");
+    }
   };
 
   const updateAsmAst = (ast: ASMRootNode) => {
+    console.log("UpdateAsmAst", ast);
     const { rangeMap, memWords, instructions: newinstructions } = assembler.assemble(ast);
-    console.log("updateAsmAst", newinstructions.length, memWords.length);
     setAsmRange(new CodeHighlightInfo());
     // setInstructions(instructions);
     instructions = newinstructions;
@@ -171,7 +179,6 @@ export const App = () => {
                 col: highlightColors[Math.min(i, highlightColors.length - 1)],
               });
             });
-          console.log(draft.code);
         })
       );
     }
@@ -181,7 +188,7 @@ export const App = () => {
 
   useEffect(() => {
     const i = instructions[computer.cpu.pcLast / 4];
-    console.log("useEffect: setCodeRange and setAsmRange", i);
+    // console.log("useEffect: setCodeRange and setAsmRange", i);
     if (i) {
       // find the instruction matching pcLast - this has the corresponding asm pos stored in pos
       // look up asm pos (right) in codeAsmRangeMap to get the code pos (left)

@@ -2,7 +2,7 @@ import { lintGutter, linter } from "@codemirror/lint";
 import { basicSetup } from "codemirror";
 import { EditorView } from "@codemirror/view";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
-import { CharStreams, CommonTokenStream, Lexer } from "antlr4ts";
+import { CharStreams, CommonTokenStream, Lexer, ParserRuleContext } from "antlr4ts";
 import { useEffect, useRef, useState } from "react";
 import { simpleC } from "../../languages/simpleC/codemirror/simplec-lang";
 import { Decoration } from "@codemirror/view";
@@ -16,7 +16,7 @@ import { ASMRootNode } from "../../languages/riv32asm/parser/astNodes";
 import { SimpleCLexer } from "../../languages/simpleC/parser/antlr/SimpleCLexer";
 import { SimpleCParser } from "../../languages/simpleC/parser/antlr/SimpleCParser";
 import { SimpleCAstBuilder } from "../../languages/simpleC/parser/astBuilder";
-import { AstCNode } from "../../languages/simpleC/parser/astNodes";
+import { AstCNode, AstRepl } from "../../languages/simpleC/parser/astNodes";
 import { ErrorListener } from "../../languages/simpleC/parser/ErrorListener";
 import { simpleASM } from "../../languages/riv32asm/codemirror/simpleasm-lang";
 import { CodeHighlightInfo } from "../../utils/antlr";
@@ -67,23 +67,31 @@ export const CodeEditor = (props: {
     let tree = parser.program();
 
     if (errorListener.errors.length === 0 && codeChanged) {
-      const ast = builder.visit(tree);
-      props.updateAst(ast);
+      const ast = builder.visitTree(tree);
+      console.log(props.lang, ast);
+      if (ast.errors.length) {
+        console.log(ast.errors);
+        props.updateAst(null);
+        return ast.errors.map((e) => ({
+          from: doc.line(e.pos.startLine).from + e.pos.startCol,
+          to: doc.line(e.pos.endLine).from + e.pos.endCol,
+          message: e.errorMsg,
+          severity: "warning",
+        }));
+      } else props.updateAst(ast.root);
     }
 
     setCodeChanged(false);
 
-    return errorListener.errors.map((e) => {
-      return {
-        from: doc.line(e.line).from + e.charPositionInLine,
-        to:
-          doc.line(e.line).from +
-          e.charPositionInLine +
-          (e.offendingSymbol ? e.offendingSymbol.text.length : 1),
-        message: e.msg,
-        severity: "error",
-      };
-    });
+    return errorListener.errors.map((e) => ({
+      from: doc.line(e.line).from + e.charPositionInLine,
+      to:
+        doc.line(e.line).from +
+        e.charPositionInLine +
+        (e.offendingSymbol ? e.offendingSymbol.text.length : 1),
+      message: e.msg,
+      severity: "error",
+    }));
   });
 
   useEffect(() => {
@@ -149,6 +157,10 @@ export const CodeEditor = (props: {
   if (props.lang === "simpleC") extensions.push(simpleC());
   if (props.lang === "simpleASM") extensions.push(simpleASM());
   if (props.updateBreakpoints) extensions.push(breakpointGutter);
+
+  // useEffect(() => {
+  //   console.log("codemirror ", props.lang, props.code.length, props.highlightRanges.code.length);
+  // });
 
   return (
     <CodeMirror

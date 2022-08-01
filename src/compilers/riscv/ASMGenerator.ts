@@ -16,6 +16,8 @@ import {
   AstVariableDeclaration,
   AstVariableExpression,
   AstWhile,
+  AstError,
+  AstUnaryExpression,
 } from "../../languages/simpleC/parser/astNodes";
 import { Scope, ScopeStack } from "../../languages/simpleC/parser/scopeStack";
 import { library } from "../../linker/library";
@@ -437,6 +439,7 @@ export class ASMGenerator {
   visitExpression(node: AstExpression) {
     if (node instanceof AstConstExpression) return this.visitConstExpression(node);
     else if (node instanceof AstBinaryExpression) return this.visitBinaryExpression(node);
+    else if (node instanceof AstUnaryExpression) return this.visitUnaryExpression(node);
     else if (node instanceof AstVariableExpression) return this.visitVariableExpression(node);
     else if (node instanceof AstFunctionCall) return this.visitFunctionCall(node);
     else throw new Error();
@@ -469,6 +472,17 @@ export class ASMGenerator {
     //   const argIndex = this.currentFunction.params.findIndex(p => id == p.id);
     //   this.emitter.emitLW(R.A0, R.FP, argIndex * WORD_SIZE, `retrieve param variable ${node.declaration.id}`);
     // }
+  }
+
+  visitUnaryExpression(node: AstUnaryExpression) {
+    this.visitExpression(node.rhs); // accummualtor will be saved to a0 = result of RHS
+    switch (node.op) {
+      case "-":
+        this.emitter.emitSUB(R.A0, R.ZERO, R.A0, "Unary negation");
+        break;
+      default:
+        throw new Error();
+    }
   }
 
   visitBinaryExpression(node: AstBinaryExpression) {
@@ -515,6 +529,13 @@ export class ASMGenerator {
         this.pushStack(R.A1, "save copy of A1 to stack");
         this.emitter.emitMV(R.A1, R.T1, "Move T1 to A1");
         this.emitter.emitJAL("__divsi3", "a0 = a0 / a1");
+        this.popStack(R.A1, "restore A1 from stack");
+        break;
+      case "%":
+        library.div.include = true;
+        this.pushStack(R.A1, "save copy of A1 to stack");
+        this.emitter.emitMV(R.A1, R.T1, "Move T1 to A1");
+        this.emitter.emitJAL("__modsi3", "a0 = a0 % a1");
         this.popStack(R.A1, "restore A1 from stack");
         break;
       case "-":

@@ -1,5 +1,7 @@
 import { ParserRuleContext } from "antlr4ts/ParserRuleContext";
 import { AbstractParseTreeVisitor } from "antlr4ts/tree/AbstractParseTreeVisitor";
+import { ParseTree } from "antlr4ts/tree/ParseTree";
+import { ASMRootNode } from "../../riv32asm/parser/astNodes";
 import {
   AssignmentContext,
   BinaryExpressionContext,
@@ -54,7 +56,6 @@ import {
   AstSwitch,
   AstTernaryExpression,
   AstUnaryExpression,
-  AstUndeclaredError,
   AstVariableDeclaration,
   AstVariableExpression,
   AstWhile,
@@ -62,16 +63,32 @@ import {
 import { ScopeStack } from "./scopeStack";
 import { AllowedTypes } from "./signature";
 
+export interface AstBuildResult {
+  root: AstCNode | ASMRootNode;
+  errors: AstError[];
+}
+
 export class SimpleCAstBuilder
   extends AbstractParseTreeVisitor<AstCNode>
   implements SimpleCVisitor<AstCNode>
 {
   scopeStack: ScopeStack<AstIdentifierDeclaration, void>;
   anonMax: number = 0;
+  errors: AstError[];
 
   constructor() {
     super();
     this.scopeStack = new ScopeStack();
+    this.errors = [];
+  }
+
+  reset() {
+    this.errors = [];
+  }
+
+  addError(error: AstError) {
+    this.errors.push(error);
+    return error;
   }
 
   createStdLibFunction(ctx: ParserRuleContext, id: string, params: AstVariableDeclaration[]) {
@@ -98,6 +115,13 @@ export class SimpleCAstBuilder
 
   aggregateResult(aggregate: AstCNode, nextResult: AstCNode) {
     return nextResult;
+  }
+
+  visitTree(tree: ParseTree): AstBuildResult {
+    return {
+      root: tree.accept(this),
+      errors: this.errors,
+    };
   }
 
   visitProgram(ctx: ProgramContext) {
@@ -184,7 +208,7 @@ export class SimpleCAstBuilder
   visitVariableExpression(ctx: VariableExpressionContext) {
     const id = ctx.Identifier().text;
     const [found, idNode] = this.scopeStack.getSymbol(id);
-    if (!found) return new AstUndeclaredError(ctx, id);
+    if (!found) return this.addError(new AstError(ctx, `Variable ${id} is undeclared`));
     const indexes = ctx.indexes()
       ? ctx
           .indexes()
@@ -263,7 +287,7 @@ export class SimpleCAstBuilder
   visitAssignment(ctx: AssignmentContext) {
     const lhs = this.visitExpression(ctx.expression(0));
     if (!(lhs instanceof AstVariableExpression))
-      return new AstError(ctx, `lhs of assignment is not a variable`);
+      return this.addError(new AstError(ctx, `lhs of assignment is not a variable`));
     const rhs = this.visitExpression(ctx.expression(1));
     return new AstAssignment(ctx, lhs, rhs);
   }
@@ -271,7 +295,7 @@ export class SimpleCAstBuilder
   visitFunctionCall(ctx: FunctionCallContext) {
     const id = ctx.Identifier().text;
     let [found, decl] = this.scopeStack.getSymbol(id);
-    if (!found) return new AstError(ctx, `function ${id} does not exist`);
+    if (!found) return this.addError(new AstError(ctx, `function ${id} does not exist`));
 
     const funDecl = decl as AstFunctionDeclaration;
 
@@ -283,12 +307,15 @@ export class SimpleCAstBuilder
       : [];
 
     if (params.length !== funDecl.signature.paramTypes.length)
-      return new AstError(ctx, `function ${id} incorrect number of params`);
+      return this.addError(new AstError(ctx, `function ${id} incorrect number of params`));
     const matches = params.every((param, i) => {
       // console.log(i, param);
       return param.returnType() === funDecl.signature.paramTypes[i];
     });
-    if (!matches) return new AstError(ctx, `function ${id} incorrect param typeS`);
+    if (!matches) {
+      debugger;
+      return this.addError(new AstError(ctx, `function ${id} incorrect param typeS`));
+    }
     return new AstFunctionCall(ctx, funDecl, params);
   }
 

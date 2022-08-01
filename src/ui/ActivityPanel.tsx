@@ -13,6 +13,14 @@ const fileTreeData = [
       { title: "mul.tc" },
       { title: "sqrt.tc" },
       { title: "blank.tc" },
+      {
+        title: "Tests",
+        children: [
+          {
+            title: "math.tc",
+          },
+        ],
+      },
     ],
   },
 ];
@@ -31,9 +39,9 @@ export const ActivityPanel = (props) => {
           expandAction="click"
           fieldNames={{ key: "title" }}
           showLine
-          onSelect={(keys) => {
+          onSelect={(keys, info) => {
             const x = keys[0].toString();
-            if (x !== "Files") useSettingsStore.setState({ filename: x });
+            if (!info.node.children) useSettingsStore.setState({ filename: x });
           }}></Tree>
       );
     case 1: // settings
