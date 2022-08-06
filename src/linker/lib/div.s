@@ -28,6 +28,7 @@ __udivsi3:
   srli  a2, a2, 1
   bnez  a3, .L3
 .L5:
+  mv a0, a2
   ret
 
   .globl __umodsi3
