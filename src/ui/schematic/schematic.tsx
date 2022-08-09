@@ -1,31 +1,15 @@
 import { Box, Flex, VStack } from "@chakra-ui/react";
 import { IR } from "./ir";
-import { Ram } from "./ram";
-import { Regs } from "./regs";
-import { Stack } from "./stack";
 import { DataPath } from "./datapath";
 import { CodeHighlightInfo } from "../../utils/antlr";
 
-export const Schematic = (props: { memoryHighlightRanges: CodeHighlightInfo }) => {
+export const Schematic = () => {
   return (
-    <Flex direction="column" height="100vh" gap={2} padding={2} className="schematic">
+    <Flex direction="column" gap={4} padding={4} className="schematic">
       <Box className="irBox">
         <IR></IR>
       </Box>
       <DataPath></DataPath>
-      <Flex gap={4} style={{ overflow: "hidden" }}>
-        <Box flex="0 0 auto" className="ramBox">
-          <Ram highlightRanges={props.memoryHighlightRanges}></Ram>
-        </Box>
-        <VStack flex="1 1 auto" style={{ overflow: "hidden" }}>
-          <Box className="ramBox">
-            <Stack></Stack>
-          </Box>
-        </VStack>
-        <Box className="regBox" flex="0 0 auto">
-          <Regs></Regs>
-        </Box>
-      </Flex>
     </Flex>
   );
 };

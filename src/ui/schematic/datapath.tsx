@@ -29,7 +29,7 @@ export const DataPath = () => {
 
   return (
     <Box className="datapathBox" flex="1">
-      <Accordion allowMultiple>
+      <Accordion defaultIndex={[0, 1]} allowMultiple>
         <AccordionItem>
           <AccordionButton flex="1">
             <Flex gap={4} flex="1">

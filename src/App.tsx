@@ -1,19 +1,22 @@
 import React, { useCallback, useEffect, useReducer, useState } from "react";
-import "react-reflex/styles.css";
 import { CodeEditor } from "./ui/editor/CodeEditor";
 import { ASMGenerator } from "./compilers/riscv/ASMGenerator";
 import { MCGenerator } from "./assemblers/riscv/MCGenerator";
 import { Computer } from "./simulator/System";
 import "./app.css";
 import produce, { enableMapSet } from "immer";
-import { ChakraProvider, theme, Box, Flex } from "@chakra-ui/react";
-import { ReflexContainer, ReflexElement, ReflexSplitter } from "react-reflex";
+import { ChakraProvider, theme, Box, Flex, VStack } from "@chakra-ui/react";
 import { Schematic } from "./ui/schematic/schematic";
 import { ASMRootNode } from "./languages/riv32asm/parser/astNodes";
 import { Instruction } from "./languages/riv32asm/parser/Instruction";
 import { AstCNode } from "./languages/simpleC/parser/astNodes";
 import { ActivityBar } from "./ui/ActivityBar";
 import { VscFiles, VscSettingsGear } from "react-icons/vsc";
+
+import { ExpandButton, Mosaic, MosaicWindow } from "react-mosaic-component";
+import "react-mosaic-component/react-mosaic-component.css";
+import "@blueprintjs/core/lib/css/blueprint.css";
+import "@blueprintjs/icons/lib/css/blueprint-icons.css";
 
 import { useSettingsStore } from "./store/useSettingsStore";
 import { ActivityPanel } from "./ui/ActivityPanel";
@@ -26,6 +29,12 @@ import {
   highlightColors,
   RangeMap,
 } from "./utils/antlr";
+import { BiSidebar } from "react-icons/bi";
+import { Sidebar } from "./ui/SideBar";
+import { Ram } from "./ui/schematic/ram";
+import { Stack } from "./ui/schematic/stack";
+import { Regs } from "./ui/schematic/regs";
+import { Mem } from "./ui/schematic/mem";
 
 enableMapSet();
 
@@ -225,53 +234,68 @@ export const App = () => {
     }
   }, [codeAsmRangeMap, highlightPC, pc]);
 
+  const ELEMENT_MAP: { [viewId: string]: JSX.Element } = {
+    Code: (
+      <CodeEditor
+        code={code}
+        lang="simpleC"
+        updateAst={updateCAst}
+        updatePos={setCodeLinePos}
+        highlightRanges={codeRange}></CodeEditor>
+    ),
+    Compiled: (
+      <CodeEditor
+        code={asm}
+        lang="simpleASM"
+        updateAst={updateAsmAst}
+        updatePos={setAsmLinePos}
+        updateBreakpoints={updateAsmBreakpoints}
+        highlightRanges={asmRange}></CodeEditor>
+    ),
+    RiscV: <Schematic></Schematic>,
+    Memory: <Mem memoryHighlightRanges={memRange}></Mem>,
+    Menu: <Sidebar></Sidebar>,
+  };
+
   return (
     <ChakraProvider theme={theme}>
-      <Flex direction="row" fontSize="md" h="100vh">
-        <ActivityBar
-          checked={activity}
-          icons={[VscFiles, VscSettingsGear]}
-          onClick={(index) => {
-            if (index === activity) setActivity(-1);
-            else setActivity(index);
-          }}></ActivityBar>
+      <div style={{ width: "100vw", height: "100vh" }}>
         <ComputerContext.Provider value={{ computer, breakpoints, render }}>
-          <ReflexContainer orientation="vertical">
-            <ReflexElement size={activity === -1 ? 0 : 100}>
-              <Box p={2}>
-                <ActivityPanel activity={activity}></ActivityPanel>
-              </Box>
-            </ReflexElement>
-            <ReflexSplitter />
-            <ReflexElement className="c-pane">
-              <CodeEditor
-                code={code}
-                lang="simpleC"
-                updateAst={updateCAst}
-                updatePos={setCodeLinePos}
-                highlightRanges={codeRange}></CodeEditor>
-            </ReflexElement>
-
-            <ReflexSplitter />
-
-            <ReflexElement className="asm-pane">
-              <CodeEditor
-                code={asm}
-                lang="simpleASM"
-                updateAst={updateAsmAst}
-                updatePos={setAsmLinePos}
-                updateBreakpoints={updateAsmBreakpoints}
-                highlightRanges={asmRange}></CodeEditor>
-            </ReflexElement>
-
-            <ReflexSplitter />
-
-            <ReflexElement className="sim-pane">
-              <Schematic memoryHighlightRanges={memRange}></Schematic>
-            </ReflexElement>
-          </ReflexContainer>
+          <Mosaic<string>
+            renderTile={(id, path) => (
+              <MosaicWindow<string>
+                path={path}
+                createNode={() => "new"}
+                title={id}
+                toolbarControls={React.Children.toArray([<ExpandButton />])}>
+                {ELEMENT_MAP[id]}
+              </MosaicWindow>
+            )}
+            initialValue={{
+              direction: "row",
+              splitPercentage: 10,
+              first: "Menu",
+              second: {
+                direction: "row",
+                splitPercentage: 30,
+                first: "Code",
+                second: {
+                  direction: "row",
+                  splitPercentage: 50,
+                  first: "Compiled",
+                  second: {
+                    direction: "column",
+                    splitPercentage: 32,
+                    first: "RiscV",
+                    second: "Memory",
+                  },
+                },
+              },
+            }}
+            blueprintNamespace="bp4"
+          />
         </ComputerContext.Provider>
-      </Flex>
+      </div>
     </ChakraProvider>
   );
 };

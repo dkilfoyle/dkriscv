@@ -5,23 +5,23 @@
   /* overflow-x: scroll; */
 }
 ::-webkit-scrollbar {
-  background-color: rgba(0, 0, 0, 0);
+  background-color: rgba(90, 90, 90, 0);
   width: 0px;
-  -webkit-border-radus: 100px;
+  /* -webkit-border-radus: 100px; */
 }
 
 :hover::-webkit-scrollbar {
-  width: 8px;
-  background-color: rgba(0, 0, 0, 0.09);
+  width: 12px;
+  background-color: rgba(163, 163, 163, 0.09);
 }
 
 ::-webkit-scrollbar-thumb:vertical {
-  background: rgba(0, 0, 0, 0.5);
-  -webkit-border-radius: 100px;
+  background: rgba(190, 190, 190, 0.5);
+  /* -webkit-border-radius: 100px; */
 }
 ::-webkit-scrollbar-thumb:vertical:active {
-  background: rgba(0, 0, 0, 0.61);
-  -webkit-border-radius: 100px;
+  background: rgba(90, 90, 90, 0.61);
+  /* -webkit-border-radius: 100px; */
 }
 
 .c-pane {
@@ -41,4 +41,8 @@
 
 .reflex-container.vertical > .reflex-splitter:hover {
   background-color: dodgerblue;
+}
+
+body {
+  margin: 0px;
 }

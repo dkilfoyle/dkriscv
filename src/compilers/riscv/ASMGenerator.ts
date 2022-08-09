@@ -527,16 +527,24 @@ export class ASMGenerator {
       case "/":
         library.div.include = true;
         this.pushStack(R.A1, "save copy of A1 to stack");
+        this.pushStack(R.A2, "save copy of A2 to stack");
+        this.pushStack(R.A3, "save copy of A3 to stack");
         this.emitter.emitMV(R.A1, R.T1, "Move T1 to A1");
         this.emitter.emitJAL("__divsi3", "a0 = a0 / a1");
+        this.popStack(R.A3, "restore A3 from stack");
+        this.popStack(R.A2, "restore A2 from stack");
         this.popStack(R.A1, "restore A1 from stack");
         break;
       case "%":
         library.div.include = true;
         this.pushStack(R.A1, "save copy of A1 to stack");
+        this.pushStack(R.A2, "save copy of A2 to stack");
+        this.pushStack(R.A3, "save copy of A3 to stack");
         this.emitter.emitMV(R.A1, R.T1, "Move T1 to A1");
         this.emitter.emitJAL("__modsi3", "a0 = a0 % a1");
-        this.popStack(R.A1, "restore A1 from stack");
+        // this.popStack(R.A3, "restore A3 from stack");
+        // this.popStack(R.A2, "restore A2 from stack");
+        // this.popStack(R.A1, "restore A1 from stack");
         break;
       case "-":
         this.emitter.emitSUB(

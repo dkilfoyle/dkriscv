@@ -164,6 +164,7 @@ export const CodeEditor = (props: {
 
   return (
     <CodeMirror
+      style={{ overflow: "overlay", height: "100%" }}
       ref={cmCodeRef}
       value={props.code}
       extensions={extensions}

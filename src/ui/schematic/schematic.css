@@ -72,6 +72,7 @@ td.name {
   width: 100%;
   border-radius: 5px;
   border-width: 1px;
+  border-bottom: 0px;
   background: rgb(250, 250, 250);
 }
 
@@ -118,7 +119,7 @@ td.name {
 .regBox {
   border-radius: 5px;
   border-width: 1px;
-  overflow: auto;
+  overflow: overlay;
   min-width: 200px;
   background-color: #f8f8f8;
 }
@@ -148,6 +149,6 @@ td.name {
   background: #e8f5e9;
   border-radius: 5px;
   border-width: 1px;
-  overflow: auto;
+  overflow: overlay;
   width: 220px;
 }
