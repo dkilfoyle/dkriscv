@@ -23,7 +23,6 @@ import { ParseTree } from "antlr4ts/tree/ParseTree";
 import { DocPosition } from "../../../utils/antlr";
 import { ASMRootNode, DataSection } from "./astNodes";
 import { AstBuildResult } from "../../simpleC/parser/astBuilder";
-import { BreadcrumbLink } from "@chakra-ui/react";
 
 export const registerNumbers = {
   zero: 0,

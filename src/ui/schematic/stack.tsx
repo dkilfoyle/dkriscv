@@ -27,35 +27,30 @@ export const Stack = (props: { highlightRange?: [number, number] }) => {
             <HStack>
               <span>
                 {memory
-                  .localRead(i * 4 + 3, 1)
+                  .localRead(i + 3, 1)
                   .toString(16)
                   .padStart(2, "0")}
               </span>
               <span>
                 {memory
-                  .localRead(i * 4 + 2, 1)
+                  .localRead(i + 2, 1)
                   .toString(16)
                   .padStart(2, "0")}
               </span>
               <span>
                 {memory
-                  .localRead(i * 4 + 1, 1)
+                  .localRead(i + 1, 1)
                   .toString(16)
                   .padStart(2, "0")}
               </span>
-              <span>
-                {memory
-                  .localRead(i * 4, 1)
-                  .toString(16)
-                  .padStart(2, "0")}
-              </span>
+              <span>{memory.localRead(i, 1).toString(16).padStart(2, "0")}</span>
             </HStack>
           </Td>
         );
       case "D":
-        return <Td>{memory.localRead(i * 4, 4)}</Td>;
+        return <Td>{memory.localRead(i, 4)}</Td>;
       case "U":
-        return <Td>{memory.localRead(i * 4, 4) >>> 0}</Td>;
+        return <Td>{memory.localRead(i, 4) >>> 0}</Td>;
       case "S":
         return (
           <Td>
@@ -70,6 +65,8 @@ export const Stack = (props: { highlightRange?: [number, number] }) => {
 
   const stackSizeWords = (memSize - computer.cpu.getX(2)) / 4 + 1;
   const stackAddresses = [...Array(stackSizeWords)].map((_, i) => memSize - i * 4);
+
+  console.log("update stack");
 
   return (
     <TableContainer className="ramTable">

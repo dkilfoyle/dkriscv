@@ -9,5 +9,5 @@ interface ISettingsStore {
 export const useSettingsStore = create<ISettingsStore>()((set) => ({
   highlightRanges: true,
   highlightPC: true,
-  filename: "fib.tc",
+  filename: "array.tc",
 }));

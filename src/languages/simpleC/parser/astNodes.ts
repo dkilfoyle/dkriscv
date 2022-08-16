@@ -677,8 +677,8 @@ export class AstTernaryExpression extends AstExpression {
 }
 
 export class AstConstExpression extends AstExpression {
-  value;
-  valueType;
+  value: number | boolean | string | null;
+  valueType: "int" | "bool" | "string" | "null";
   constructor(
     ctx: ParserRuleContext,
     value: number | boolean | string | null,
@@ -699,6 +699,14 @@ export class AstConstExpression extends AstExpression {
   }
   execute() {
     return this.value;
+  }
+}
+
+export class AstListExpression extends AstExpression {
+  expressions: AstExpression[];
+  constructor(ctx: ParserRuleContext, expressions: AstExpression[]) {
+    super(ctx);
+    this.expressions = expressions;
   }
 }
 
@@ -818,9 +826,17 @@ export class AstVariableDeclaration extends AstIdentifierDeclaration {
 
 export class AstArrayDeclaration extends AstIdentifierDeclaration {
   signature: ArraySignature;
-  constructor(ctx: ParserRuleContext, id: string, type: AllowedTypes, dimensions: number[]) {
+  initialExpression: AstListExpression;
+  constructor(
+    ctx: ParserRuleContext,
+    id: string,
+    type: AllowedTypes,
+    dimensions: number[],
+    initialExpression?: AstListExpression
+  ) {
     super(ctx, id);
     this.signature = new ArraySignature(type, dimensions);
+    this.initialExpression = initialExpression;
   }
   toString(indent: number = 0) {
     return this.indent(

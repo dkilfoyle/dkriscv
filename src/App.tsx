@@ -1,17 +1,15 @@
-import React, { useCallback, useEffect, useReducer, useState } from "react";
+import React, { useEffect, useReducer, useState } from "react";
 import { CodeEditor } from "./ui/editor/CodeEditor";
 import { ASMGenerator } from "./compilers/riscv/ASMGenerator";
 import { MCGenerator } from "./assemblers/riscv/MCGenerator";
 import { Computer } from "./simulator/System";
 import "./app.css";
 import produce, { enableMapSet } from "immer";
-import { ChakraProvider, theme, Box, Flex, VStack } from "@chakra-ui/react";
+import { ChakraProvider, theme } from "@chakra-ui/react";
 import { Schematic } from "./ui/schematic/schematic";
 import { ASMRootNode } from "./languages/riv32asm/parser/astNodes";
 import { Instruction } from "./languages/riv32asm/parser/Instruction";
 import { AstCNode } from "./languages/simpleC/parser/astNodes";
-import { ActivityBar } from "./ui/ActivityBar";
-import { VscFiles, VscSettingsGear } from "react-icons/vsc";
 
 import { ExpandButton, Mosaic, MosaicWindow } from "react-mosaic-component";
 import "react-mosaic-component/react-mosaic-component.css";
@@ -19,7 +17,6 @@ import "@blueprintjs/core/lib/css/blueprint.css";
 import "@blueprintjs/icons/lib/css/blueprint-icons.css";
 
 import { useSettingsStore } from "./store/useSettingsStore";
-import { ActivityPanel } from "./ui/ActivityPanel";
 import {
   CodeHighlightInfo,
   emptyHighlightRange,
@@ -29,11 +26,7 @@ import {
   highlightColors,
   RangeMap,
 } from "./utils/antlr";
-import { BiSidebar } from "react-icons/bi";
 import { Sidebar } from "./ui/SideBar";
-import { Ram } from "./ui/schematic/ram";
-import { Stack } from "./ui/schematic/stack";
-import { Regs } from "./ui/schematic/regs";
 import { Mem } from "./ui/schematic/mem";
 
 enableMapSet();
@@ -49,7 +42,6 @@ export const ComputerContext = React.createContext<{
 
 const computer = new Computer();
 let instructions: Instruction[] = [];
-let n = 0;
 
 export const App = () => {
   // useEffect(() => {
@@ -78,8 +70,6 @@ export const App = () => {
 
   const [codeAsmRangeMap, setCodeAsmRangeMap] = useState<RangeMap>([]);
   const [asmMachineCodeRangeMap, setAsmMachineCodeRangeMap] = useState<RangeMap>([]);
-
-  const [activity, setActivity] = useState(0);
 
   useEffect(() => {
     fetch(require("./languages/simpleC/examples/" + filename))

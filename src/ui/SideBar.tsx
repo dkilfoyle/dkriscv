@@ -28,6 +28,9 @@ const fileTreeData = [
           {
             title: "math.tc",
           },
+          {
+            title: "array.tc",
+          },
         ],
       },
     ],
@@ -56,7 +59,8 @@ export const Sidebar = () => {
           <Tree
             treeData={fileTreeData as any}
             autoExpandParent
-            defaultExpandedKeys={["Files"]}
+            defaultExpandedKeys={["Files", "Tests"]}
+            defaultSelectedKeys={[filename]}
             expandAction="click"
             fieldNames={{ key: "title" }}
             showLine

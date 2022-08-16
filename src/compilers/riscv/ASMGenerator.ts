@@ -18,6 +18,7 @@ import {
   AstWhile,
   AstError,
   AstUnaryExpression,
+  AstArrayDeclaration,
 } from "../../languages/simpleC/parser/astNodes";
 import { Scope, ScopeStack } from "../../languages/simpleC/parser/scopeStack";
 import { library } from "../../linker/library";
@@ -77,8 +78,8 @@ export class ASMGenerator {
   }
 
   popStack(rd: R, comment: string = `pop top of stack to X${rd}`) {
-    this.emitter.emitADDI(R.SP, R.SP, 4, "shrink stack");
     this.emitter.emitLW(rd, R.SP, 0, comment);
+    this.emitter.emitADDI(R.SP, R.SP, 4, "shrink stack");
   }
 
   compile(root: AstCNode, src: string) {
@@ -226,8 +227,7 @@ export class ASMGenerator {
     else if (node instanceof AstBlock) this.visitBlock(node);
     else if (node instanceof AstAssignment) this.visitAssignment(node);
     else if (node instanceof AstVariableDeclaration) this.visitVariableDeclaration(node);
-    // else if (node instanceof AstArrayDeclaration)
-    //   this.visitArrayDeclaration(node)
+    else if (node instanceof AstArrayDeclaration) this.visitArrayDeclaration(node);
     else if (node instanceof AstReturn) this.visitReturn(node);
     // else if (node instanceof AstPrintf)
     //   return this.visitPrintf(node);
@@ -291,6 +291,9 @@ export class ASMGenerator {
       if (statement instanceof AstVariableDeclaration) {
         this.scopeStack.pushLocal(statement.id, statement.signature.getByteSize());
       }
+      if (statement instanceof AstArrayDeclaration) {
+        this.scopeStack.pushLocal(statement.id, statement.signature.getByteSize());
+      }
     }
 
     // grow the stack to make space for the locals
@@ -343,15 +346,28 @@ export class ASMGenerator {
       );
   }
 
-  // visitArrayDeclaration(node: AstArrayDeclaration) {
-  //   // locals grow down from FP + 8 (to skip RA and CL)
-  //   this.locals[node.id] = -3 * WORD_SIZE + Object.keys(this.locals).length * -4;
-  //   if (node.initialExpression) {
-  //     this.visitExpression(node.initialExpression);
-  //     this.pushStack(R.A0, `push local var ${node.id} to stack and init value`);
-  //   } else
-  //     this.pushStack(R.ZERO, `push local var ${node.id} to stack and init to 0`);
-  // }
+  visitArrayDeclaration(node: AstArrayDeclaration) {
+    // get offset from scope
+    const offset = this.scopeStack.getLocalVarOffset(node.id);
+
+    if (node.initialExpression) {
+      node.initialExpression.expressions.forEach((e, i) => {
+        this.visitExpression(e);
+        this.emitter.emitSW(
+          R.A0,
+          R.FP,
+          offset.fpoffset + i * 4,
+          `init array var ${node.id} item ${i}`
+        );
+      });
+    } else
+      this.emitter.emitSW(
+        R.ZERO,
+        R.FP,
+        offset.fpoffset,
+        `push local var ${node.id} to stack and init to 0`
+      );
+  }
 
   visitAssignment(node: AstAssignment) {
     this.visitExpression(node.rhsExpression);
@@ -448,7 +464,7 @@ export class ASMGenerator {
   visitConstExpression(node: AstConstExpression) {
     // return llvm.ConstantInt.get(this.context, node.value);
     if (node.returnType() === "int")
-      this.emitter.emitLI(R.A0, node.value, `Load constant ${node.value} to a0`);
+      this.emitter.emitLI(R.A0, node.value as number, `Load constant ${node.value} to a0`);
     else if (node.returnType() === "string") {
       const label = this.newLabel("stringconst");
       let value = node.value as string;
@@ -460,18 +476,30 @@ export class ASMGenerator {
   visitVariableExpression(node: AstVariableExpression) {
     const id = node.declaration.id;
     const offset = this.scopeStack.getLocalVarOffset(id).fpoffset;
-    this.emitter.emitLW(
-      R.A0,
-      R.FP,
-      offset,
-      `retrieve ${offset <= 0 ? "func param" : "local variable"} ${node.declaration.id}`
-    );
-    // if (typeof this.locals[id] != "undefined")
-    //   this.emitter.emitLW(R.A0, R.FP, this.locals[id], `retrieve local variable ${node.declaration.id}`);
-    // else {
-    //   const argIndex = this.currentFunction.params.findIndex(p => id == p.id);
-    //   this.emitter.emitLW(R.A0, R.FP, argIndex * WORD_SIZE, `retrieve param variable ${node.declaration.id}`);
-    // }
+
+    // expression is of form x[e] where e is an expression
+    if (node.indexExpressions) {
+      // todo: implement multidimensional referencing ie x[e0][e1]...
+
+      this.emitter.emitADDI(R.A0, R.FP, offset, `get pointer to start of array ${id}`);
+      this.pushStack(R.A0, "push array pointer to stack");
+
+      // calculate e of x[e], result in A0
+      this.visitExpression(node.indexExpressions[0]);
+
+      this.popStack(R.A1, "pop array pointer off stack");
+      this.emitter.emitSLLI(R.A0, R.A0, 2, "Index in bytes");
+      this.emitter.emitADD(R.A0, R.A1, R.A0, "array pointer + index in bytes");
+
+      this.emitter.emitLW(R.A0, R.A0, 0, `retrieve ${id}[A0]`);
+    } else {
+      this.emitter.emitLW(
+        R.A0,
+        R.FP,
+        offset,
+        `retrieve ${offset <= 0 ? "func param" : "local variable"} ${node.declaration.id}`
+      );
+    }
   }
 
   visitUnaryExpression(node: AstUnaryExpression) {

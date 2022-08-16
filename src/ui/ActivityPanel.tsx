@@ -19,6 +19,9 @@ const fileTreeData = [
           {
             title: "math.tc",
           },
+          {
+            title: "array.tc",
+          },
         ],
       },
     ],
@@ -38,6 +41,7 @@ export const ActivityPanel = (props) => {
           treeData={fileTreeData as any}
           expandAction="click"
           fieldNames={{ key: "title" }}
+          // selectedKeys={[filename]}
           showLine
           onSelect={(keys, info) => {
             const x = keys[0].toString();

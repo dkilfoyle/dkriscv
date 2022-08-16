@@ -14,6 +14,7 @@ import {
   FunctionCallContext,
   FunctionDeclContext,
   IfStatementContext,
+  ListExpressionContext,
   NullExpressionContext,
   NumberExpressionContext,
   ParamContext,
@@ -59,6 +60,7 @@ import {
   AstVariableDeclaration,
   AstVariableExpression,
   AstWhile,
+  AstListExpression,
 } from "./astNodes";
 import { ScopeStack } from "./scopeStack";
 import { AllowedTypes } from "./signature";
@@ -218,6 +220,17 @@ export class SimpleCAstBuilder
     return new AstVariableExpression(ctx, idNode as AstVariableDeclaration, indexes);
   }
 
+  visitListExpression(ctx: ListExpressionContext) {
+    return new AstListExpression(
+      ctx,
+      ctx
+        .list()
+        .exprList()
+        .expression()
+        .map((e) => this.visitExpression(e))
+    );
+  }
+
   visitBracketExpression(ctx: BracketExpressionContext) {
     return this.visitExpression(ctx.expression());
   }
@@ -269,7 +282,10 @@ export class SimpleCAstBuilder
               varType as AllowedTypes,
               idctx
                 .dimensions()
-                .map((dimCtx) => (dimCtx.Number() ? Number(dimCtx.Number().text) : -1))
+                .map((dimCtx) => (dimCtx.Number() ? Number(dimCtx.Number().text) : -1)),
+              idctx.expression()
+                ? this.visitListExpression(idctx.expression() as ListExpressionContext)
+                : undefined
             )
           : new AstVariableDeclaration(
               idctx,
@@ -285,10 +301,10 @@ export class SimpleCAstBuilder
   }
 
   visitAssignment(ctx: AssignmentContext) {
-    const lhs = this.visitExpression(ctx.expression(0));
+    const lhs = this.visitVariableExpression(ctx);
     if (!(lhs instanceof AstVariableExpression))
       return this.addError(new AstError(ctx, `lhs of assignment is not a variable`));
-    const rhs = this.visitExpression(ctx.expression(1));
+    const rhs = this.visitExpression(ctx.expression());
     return new AstAssignment(ctx, lhs, rhs);
   }
 

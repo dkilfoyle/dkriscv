@@ -8,6 +8,7 @@ import { BinaryExpressionContext } from "./SimpleCParser";
 import { TernaryExpressionContext } from "./SimpleCParser";
 import { ConstantExpressionContext } from "./SimpleCParser";
 import { FunctionCallExpressionContext } from "./SimpleCParser";
+import { ListExpressionContext } from "./SimpleCParser";
 import { VariableExpressionContext } from "./SimpleCParser";
 import { BracketExpressionContext } from "./SimpleCParser";
 import { NumberExpressionContext } from "./SimpleCParser";
@@ -17,16 +18,16 @@ import { StringExpressionContext } from "./SimpleCParser";
 import { ProgramContext } from "./SimpleCParser";
 import { ReplContext } from "./SimpleCParser";
 import { FunTypeContext } from "./SimpleCParser";
-import { FunctionDeclContext } from "./SimpleCParser";
 import { ParamContext } from "./SimpleCParser";
 import { ParamListContext } from "./SimpleCParser";
 import { ReturnBlockContext } from "./SimpleCParser";
+import { FunctionDeclContext } from "./SimpleCParser";
 import { StatementContext } from "./SimpleCParser";
 import { CompoundStatementContext } from "./SimpleCParser";
 import { StatementsContext } from "./SimpleCParser";
 import { ReturnStatementContext } from "./SimpleCParser";
-import { VarTypeContext } from "./SimpleCParser";
 import { VariableDeclarationContext } from "./SimpleCParser";
+import { VarTypeContext } from "./SimpleCParser";
 import { InitDeclaratorListContext } from "./SimpleCParser";
 import { InitDeclaratorContext } from "./SimpleCParser";
 import { DimensionsContext } from "./SimpleCParser";
@@ -99,6 +100,14 @@ export interface SimpleCVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitFunctionCallExpression?: (ctx: FunctionCallExpressionContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by the `listExpression`
+	 * labeled alternative in `SimpleCParser.expression`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitListExpression?: (ctx: ListExpressionContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by the `variableExpression`
 	 * labeled alternative in `SimpleCParser.expression`.
 	 * @param ctx the parse tree
@@ -168,13 +177,6 @@ export interface SimpleCVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitFunType?: (ctx: FunTypeContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `SimpleCParser.functionDecl`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitFunctionDecl?: (ctx: FunctionDeclContext) => Result;
-
-	/**
 	 * Visit a parse tree produced by `SimpleCParser.param`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -194,6 +196,13 @@ export interface SimpleCVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitReturnBlock?: (ctx: ReturnBlockContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `SimpleCParser.functionDecl`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitFunctionDecl?: (ctx: FunctionDeclContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `SimpleCParser.statement`.
@@ -224,18 +233,18 @@ export interface SimpleCVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitReturnStatement?: (ctx: ReturnStatementContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `SimpleCParser.varType`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitVarType?: (ctx: VarTypeContext) => Result;
-
-	/**
 	 * Visit a parse tree produced by `SimpleCParser.variableDeclaration`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	visitVariableDeclaration?: (ctx: VariableDeclarationContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `SimpleCParser.varType`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitVarType?: (ctx: VarTypeContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `SimpleCParser.initDeclaratorList`.

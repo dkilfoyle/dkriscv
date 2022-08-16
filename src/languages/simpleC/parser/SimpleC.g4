@@ -4,11 +4,12 @@ program: repl EOF;
 repl: functionDecl* statements;
 
 funType: varType | 'void';
+param: varType Identifier;
+paramList: param ( ',' param)*;
+returnBlock: statement* ( 'return' expression ';')?;
+
 functionDecl:
 	funType Identifier '(' paramList? ')' '{' returnBlock '}';
-param: varType Identifier;
-paramList: param (',' param)*;
-returnBlock: statement* ('return' expression ';')?;
 
 // Statements
 
@@ -26,16 +27,16 @@ statement:
 
 compoundStatement: '{' statements '}';
 statements: statement*;
-
 returnStatement: 'return' expression? ';';
 
-varType: 'int' | 'string';
 variableDeclaration: varType initDeclaratorList;
-initDeclaratorList: initDeclarator (',' initDeclarator)*;
-initDeclarator: Identifier dimensions* ('=' expression)?;
+
+varType: 'int' | 'string';
+initDeclaratorList: initDeclarator ( ',' initDeclarator)*;
+initDeclarator: Identifier dimensions* ( '=' expression)?;
 dimensions: '[' Number ']';
 
-assignment: expression '=' expression;
+assignment: Identifier indexes? '=' expression;
 
 functionCall: Identifier '(' exprList? ')';
 
@@ -55,7 +56,7 @@ forInitial: variableDeclaration | assignment;
 
 whileStatement: 'while' '(' expression ')' statement;
 
-printfStatement: 'printf' '(' String (',' expression)* ')' ';';
+printfStatement: 'printf' '(' String ( ',' expression)* ')' ';';
 
 // Expressions
 
@@ -75,6 +76,7 @@ expression:
 	| expression op = '?' expression ':' expression			# ternaryExpression
 	| constantValue											# constantExpression
 	| functionCall											# functionCallExpression
+	| list indexes?											# listExpression
 	| Identifier indexes?									# variableExpression
 	| '(' expression ')'									# bracketExpression;
 
