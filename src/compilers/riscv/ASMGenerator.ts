@@ -1,5 +1,6 @@
 // adapted from Chocopy
 
+import { ThemeProvider } from "@emotion/react";
 import {
   AstAssignment,
   AstBinaryExpression,
@@ -16,13 +17,13 @@ import {
   AstVariableDeclaration,
   AstVariableExpression,
   AstWhile,
-  AstError,
   AstUnaryExpression,
   AstArrayDeclaration,
+  AstListExpression,
 } from "../../languages/simpleC/parser/astNodes";
-import { Scope, ScopeStack } from "../../languages/simpleC/parser/scopeStack";
+import { Scope } from "../../languages/simpleC/parser/scopeStack";
 import { library } from "../../linker/library";
-import { RangeMap } from "../../utils/antlr";
+import { DocPosition, RangeMap } from "../../utils/antlr";
 import { R, RiscvEmmiter } from "./emitter";
 import { LocalScope, LocalScopeStack, LocalVariable } from "./LocalScope";
 
@@ -38,6 +39,15 @@ interface GlobalVar {
   value: string;
 }
 
+export class CompilerError {
+  pos: DocPosition;
+  msg: string;
+  constructor(pos: DocPosition, msg: string) {
+    this.pos = pos;
+    this.msg = msg;
+  }
+}
+
 export class ASMGenerator {
   emitter: RiscvEmmiter;
   labelCount: number = 0;
@@ -48,6 +58,7 @@ export class ASMGenerator {
   src: string;
   mulSource: string;
   divSource: string;
+  errors: CompilerError[];
 
   constructor() {
     this.emitter = new RiscvEmmiter();
@@ -61,6 +72,7 @@ export class ASMGenerator {
     this.labelCount = 0;
     this.dataSection = [];
     this.rangeMap = [];
+    this.errors = [];
   }
 
   newLabel(stub: string = "") {
@@ -97,7 +109,7 @@ export class ASMGenerator {
       this.emitter.emitGlobalVar(globalvar.label, globalvar.type, globalvar.value);
     });
 
-    return { code: this.emitter.out, rangeMap: this.rangeMap };
+    return { code: this.emitter.out, rangeMap: this.rangeMap, errors: this.errors };
   }
 
   // =================================================================================================================
@@ -238,10 +250,15 @@ export class ASMGenerator {
 
   visitFunctionCall(node: AstFunctionCall) {
     if (node.funDecl.id === "print_int") {
+      const startLine = this.emitter.nextLine;
       this.visitExpression(node.params[0]);
       this.emitter.emitMV(R.A1, R.A0, "Move A0 to A1 to be argument for print_int ecall");
       this.emitter.emitLI(R.A0, 1, "print_int ecall");
       this.emitter.emitECALL();
+      this.rangeMap.push({
+        left: { ...node.pos, col: "red" },
+        right: { startLine, endLine: this.emitter.nextLine - 1, col: "blue" },
+      });
       return;
     }
 
@@ -346,20 +363,21 @@ export class ASMGenerator {
       );
   }
 
+  buildArrayAt(expressions: AstExpression[], fpoffset: number, id = "") {
+    expressions.forEach((e, i) => {
+      this.visitExpression(e);
+      this.emitter.emitSW(R.A0, R.FP, fpoffset + i * 4, `init array var ${id} item ${i}`);
+    });
+  }
+
   visitArrayDeclaration(node: AstArrayDeclaration) {
     // get offset from scope
     const offset = this.scopeStack.getLocalVarOffset(node.id);
 
+    const startLine = this.emitter.nextLine;
+
     if (node.initialExpression) {
-      node.initialExpression.expressions.forEach((e, i) => {
-        this.visitExpression(e);
-        this.emitter.emitSW(
-          R.A0,
-          R.FP,
-          offset.fpoffset + i * 4,
-          `init array var ${node.id} item ${i}`
-        );
-      });
+      this.buildArrayAt(node.initialExpression.expressions, offset.fpoffset, node.id);
     } else
       this.emitter.emitSW(
         R.ZERO,
@@ -367,14 +385,40 @@ export class ASMGenerator {
         offset.fpoffset,
         `push local var ${node.id} to stack and init to 0`
       );
+
+    this.rangeMap.push({
+      left: { ...node.pos, col: "red" },
+      right: { startLine, endLine: this.emitter.nextLine - 1, col: "blue" },
+    });
   }
 
   visitAssignment(node: AstAssignment) {
+    // check type compatibility
+    if (node.lhsVariable.returnType() !== node.rhsExpression.returnType())
+      this.errors.push(
+        new CompilerError(
+          node.pos,
+          `lhs type ${node.lhsVariable.returnType()} != rhs type ${node.rhsExpression.returnType()}`
+        )
+      );
+
+    if (node.lhsVariable.returnType() === "int[]") {
+      this.errors.push(new CompilerError(node.pos, "array assignment not implemented yet"));
+      return;
+    }
+
+    const startLine = this.emitter.nextLine;
+
     this.visitExpression(node.rhsExpression);
     const lhsID = node.lhsVariable.declaration.id;
     // const fpOffset = this.locals[lhsID] || this.currentFunction.params.findIndex(p => p.id == lhsID);
     const offset = this.scopeStack.getLocalVarOffset(lhsID);
     this.emitter.emitSW(R.A0, R.FP, offset.fpoffset, "save RHS to variable on stack");
+
+    this.rangeMap.push({
+      left: { ...node.pos, col: "red" },
+      right: { startLine, endLine: this.emitter.nextLine - 1, col: "blue" },
+    });
   }
 
   // visitPrintf(node: AstPrintf) {
@@ -458,6 +502,7 @@ export class ASMGenerator {
     else if (node instanceof AstUnaryExpression) return this.visitUnaryExpression(node);
     else if (node instanceof AstVariableExpression) return this.visitVariableExpression(node);
     else if (node instanceof AstFunctionCall) return this.visitFunctionCall(node);
+    else if (node instanceof AstListExpression) return this.visitListExpression(node);
     else throw new Error();
   }
 
@@ -471,6 +516,12 @@ export class ASMGenerator {
       this.dataSection.push({ label, type: "asciiz", value: value });
       this.emitter.emitLA(R.A0, label, "Load address of string const in data section");
     }
+  }
+
+  visitListExpression(node: AstListExpression) {
+    const label = this.newLabel("tempArray");
+    const tempArrayVar = this.scopeStack.pushLocal(label, node.expressions.length * 4);
+    this.buildArrayAt(node.expressions, tempArrayVar.fpoffset, label);
   }
 
   visitVariableExpression(node: AstVariableExpression) {

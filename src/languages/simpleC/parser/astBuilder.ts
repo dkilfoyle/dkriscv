@@ -329,7 +329,6 @@ export class SimpleCAstBuilder
       return param.returnType() === funDecl.signature.paramTypes[i];
     });
     if (!matches) {
-      debugger;
       return this.addError(new AstError(ctx, `function ${id} incorrect param typeS`));
     }
     return new AstFunctionCall(ctx, funDecl, params);

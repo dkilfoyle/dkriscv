@@ -158,6 +158,9 @@ export class AstError extends AstCNode {
     // debug("AstError...")
     return "error";
   }
+  returnType() {
+    return "error";
+  }
 }
 
 export class AstRepl extends AstCNode {
@@ -708,6 +711,10 @@ export class AstListExpression extends AstExpression {
     super(ctx);
     this.expressions = expressions;
   }
+  returnType() {
+    if (this.expressions.length) return this.expressions[0].returnType() + "[]";
+    else return "unknown[]";
+  }
 }
 
 export class AstVariableExpression extends AstExpression {
@@ -734,7 +741,12 @@ export class AstVariableExpression extends AstExpression {
     return this.declaration.id;
   }
   returnType() {
-    return this.declaration.signature.returnType;
+    if (this.indexExpressions)
+      return this.declaration.signature.returnType.substring(
+        0,
+        this.declaration.signature.returnType.length - 2
+      );
+    else return this.declaration.signature.returnType;
   }
   getIndexValues() {
     if (this.indexExpressions) {

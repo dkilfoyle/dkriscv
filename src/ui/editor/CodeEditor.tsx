@@ -1,4 +1,4 @@
-import { lintGutter, linter } from "@codemirror/lint";
+import { lintGutter, linter, Diagnostic } from "@codemirror/lint";
 import { basicSetup } from "codemirror";
 import { EditorView } from "@codemirror/view";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
@@ -21,6 +21,7 @@ import { ErrorListener } from "../../languages/simpleC/parser/ErrorListener";
 import { simpleASM } from "../../languages/riv32asm/codemirror/simpleasm-lang";
 import { CodeHighlightInfo } from "../../utils/antlr";
 import { breakpointEffect, breakpointGutter } from "./breakpoint";
+import { CompilerError } from "../../compilers/riscv/ASMGenerator";
 
 const baseTheme = EditorView.baseTheme({
   "&light .cm-zebraStripe": { backgroundColor: "#d4fafa" },
@@ -39,6 +40,7 @@ export const CodeEditor = (props: {
   updateAst: (root: ASMRootNode | AstCNode) => void;
   updatePos: (pos: number) => void;
   updateBreakpoints?: (pos: number, on: boolean) => void;
+  compilerErrors?: CompilerError[];
 }) => {
   const lintCode = linter((view: EditorView) => {
     switch (props.lang) {
@@ -83,7 +85,7 @@ export const CodeEditor = (props: {
 
     setCodeChanged(false);
 
-    return errorListener.errors.map((e) => ({
+    const errors: Diagnostic[] = errorListener.errors.map((e) => ({
       from: doc.line(e.line).from + e.charPositionInLine,
       to:
         doc.line(e.line).from +
@@ -92,6 +94,19 @@ export const CodeEditor = (props: {
       message: e.msg,
       severity: "error",
     }));
+
+    if (props.compilerErrors) {
+      props.compilerErrors.forEach((e) => {
+        errors.push({
+          from: doc.line(e.pos.startLine).from + e.pos.startCol,
+          to: doc.line(e.pos.endLine).from + e.pos.endCol,
+          message: e.msg,
+          severity: "warning",
+        });
+      });
+    }
+
+    return errors;
   });
 
   useEffect(() => {

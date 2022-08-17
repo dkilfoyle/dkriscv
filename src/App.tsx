@@ -1,6 +1,6 @@
 import React, { useEffect, useReducer, useState } from "react";
 import { CodeEditor } from "./ui/editor/CodeEditor";
-import { ASMGenerator } from "./compilers/riscv/ASMGenerator";
+import { ASMGenerator, CompilerError } from "./compilers/riscv/ASMGenerator";
 import { MCGenerator } from "./assemblers/riscv/MCGenerator";
 import { Computer } from "./simulator/System";
 import "./app.css";
@@ -9,7 +9,7 @@ import { ChakraProvider, theme } from "@chakra-ui/react";
 import { Schematic } from "./ui/schematic/schematic";
 import { ASMRootNode } from "./languages/riv32asm/parser/astNodes";
 import { Instruction } from "./languages/riv32asm/parser/Instruction";
-import { AstCNode } from "./languages/simpleC/parser/astNodes";
+import { AstCNode, AstError } from "./languages/simpleC/parser/astNodes";
 
 import { ExpandButton, Mosaic, MosaicWindow } from "react-mosaic-component";
 import "react-mosaic-component/react-mosaic-component.css";
@@ -52,6 +52,8 @@ export const App = () => {
   const [code, setCode] = useState("");
   const [asm, setAsm] = useState("");
 
+  const [compilerErrors, setCompilerErrors] = useState<CompilerError[]>([]);
+
   const [highlightPC, highlightRanges, filename] = useSettingsStore((state) => [
     state.highlightPC,
     state.highlightRanges,
@@ -82,9 +84,10 @@ export const App = () => {
   const updateCAst = (ast: AstCNode | null) => {
     console.log("UpdateCAst", ast);
     if (ast) {
-      const { code: asm, rangeMap } = compiler.compile(ast, code);
+      const { code: asm, rangeMap, errors } = compiler.compile(ast, code);
       setAsm(asm);
       setCodeAsmRangeMap(rangeMap);
+      setCompilerErrors(errors);
     } else {
       setAsm("");
     }
@@ -231,6 +234,7 @@ export const App = () => {
         lang="simpleC"
         updateAst={updateCAst}
         updatePos={setCodeLinePos}
+        compilerErrors={compilerErrors}
         highlightRanges={codeRange}></CodeEditor>
     ),
     Compiled: (
