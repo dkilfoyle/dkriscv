@@ -29,7 +29,7 @@ const fileTreeData = [
 ];
 
 export const ActivityPanel = (props) => {
-  const [highlightRanges, highlightPC, filename] = useSettingsStore((state) => [
+  const [highlightRanges, highlightPC] = useSettingsStore((state) => [
     state.highlightRanges,
     state.highlightPC,
     state.filename,

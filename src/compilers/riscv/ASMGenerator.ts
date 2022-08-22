@@ -1,6 +1,6 @@
 // adapted from Chocopy
 
-import { ThemeProvider } from "@emotion/react";
+import { waitForElementToBeRemoved } from "@testing-library/react";
 import {
   AstAssignment,
   AstBinaryExpression,
@@ -137,8 +137,11 @@ export class ASMGenerator {
 
     const asmFunctionStartLine = this.emitter.nextLine;
 
-    // add a new scope for the function. SP starts at -2*WORD_SIZE to accomodate saved FP and RA
+    // add a new scope for the function. SP starts at -WORD_SIZE to accomodate saved FP and RA
     const scope = this.scopeStack.enterFunction(node.id);
+    console.log(
+      `Entering function ${node.id} scope: FP=${scope.context.FP}, initSP=${scope.context.SP}`
+    );
 
     // add function parameters to function scope
     this.scopeStack.pushFunctionParams(node);
@@ -157,7 +160,7 @@ export class ASMGenerator {
     // Arg1  <--- old SP             ====> new FP (args will be at 0(FP), 4(FP), 8(FP)... )
     // RA
     // Caller FP = dynamic link      ====> new SP
-    this.emitter.emitADDI(R.SP, R.SP, -2 * WORD_SIZE, "Make space for start of AR");
+    this.emitter.emitADDI(R.SP, R.SP, scope.context.SP, "Make space for start of AR");
     this.emitter.emitSW(R.FP, R.SP, 0, "Save caller's FP");
     this.emitter.emitSW(R.RA, R.SP, WORD_SIZE, "Save caller's RA");
     this.emitter.emitADDI(R.FP, R.SP, 2 * WORD_SIZE, "New FP is at old SP");
@@ -301,25 +304,25 @@ export class ASMGenerator {
   }
 
   visitBlock(node: AstBlock, label: string = "", functionScope?: Scope<LocalVariable, LocalScope>) {
-    if (!functionScope) this.scopeStack.enterBlock(label);
+    const scope = functionScope || this.scopeStack.enterBlock(label);
+    const startSP = scope.context.SP;
 
     // preprocess all block level local variable declarations to build scope
     for (let statement of node.body) {
       if (statement instanceof AstVariableDeclaration) {
-        this.scopeStack.pushLocal(statement.id, statement.signature.getByteSize());
+        this.scopeStack.pushLocal(statement.id, statement.type.sizeInBytes);
       }
       if (statement instanceof AstArrayDeclaration) {
-        this.scopeStack.pushLocal(statement.id, statement.signature.getByteSize());
+        this.scopeStack.pushLocal(statement.id, statement.type.sizeInBytes);
       }
     }
 
     // grow the stack to make space for the locals
-    const scope = this.scopeStack.top();
     if (scope.context.SP < 0) {
       this.emitter.emitADDI(
         R.SP,
         R.SP,
-        scope.context.SP,
+        scope.context.SP - startSP,
         `reserve stack space for ${Object.keys(scope.entries).length} locals ${Object.keys(
           scope.entries
         )}`
@@ -345,6 +348,7 @@ export class ASMGenerator {
   visitVariableDeclaration(node: AstVariableDeclaration) {
     // get offset from scope
     const offset = this.scopeStack.getLocalVarOffset(node.id);
+    console.log(offset, this.scopeStack);
 
     if (node.initialExpression) {
       this.visitExpression(node.initialExpression);
@@ -394,26 +398,49 @@ export class ASMGenerator {
 
   visitAssignment(node: AstAssignment) {
     // check type compatibility
-    if (node.lhsVariable.returnType() !== node.rhsExpression.returnType())
+    if (node.lhsVariable.returnType.toString() !== node.rhsExpression.returnType.toString())
       this.errors.push(
         new CompilerError(
           node.pos,
-          `lhs type ${node.lhsVariable.returnType()} != rhs type ${node.rhsExpression.returnType()}`
+          `Assignment type mismatch: ${node.lhsVariable.returnType} != ${node.rhsExpression.returnType}`
         )
       );
 
-    if (node.lhsVariable.returnType() === "int[]") {
-      this.errors.push(new CompilerError(node.pos, "array assignment not implemented yet"));
-      return;
-    }
+    // if (node.lhsVariable.returnType.toString() === "int[]") {
+    //   this.errors.push(new CompilerError(node.pos, "array assignment not implemented yet"));
+    //   return;
+    // }
 
     const startLine = this.emitter.nextLine;
 
+    debugger;
+
+    if (node.lhsVariable.returnType.isArray()) {
+      debugger;
+      // todo;
+      // x = [1,2,3]
+      // Should ? make temp array and then copy over
+      // or copy each array item over - prob this one
+      // or listExpr should be generated on heap returning address?
+    }
+
+    // store rhs in A0
     this.visitExpression(node.rhsExpression);
+
     const lhsID = node.lhsVariable.declaration.id;
-    // const fpOffset = this.locals[lhsID] || this.currentFunction.params.findIndex(p => p.id == lhsID);
-    const offset = this.scopeStack.getLocalVarOffset(lhsID);
-    this.emitter.emitSW(R.A0, R.FP, offset.fpoffset, "save RHS to variable on stack");
+    if (node.lhsVariable.indexExpressions?.length) {
+      // lhs is of form x[y]
+      this.emitter.emitMV(R.T1, R.A0, "save assignment rhs in T1");
+
+      // calculate array item address in A0
+      this.calcArrayOffset(lhsID, node.lhsVariable.indexExpressions);
+
+      this.emitter.emitSW(R.T1, R.A0, 0, "save RHS(T1) to array item at offset A0");
+    } else {
+      // calculate offset
+      let offset = this.scopeStack.getLocalVarOffset(lhsID).fpoffset;
+      this.emitter.emitSW(R.A0, R.FP, offset, "save RHS to variable on stack");
+    }
 
     this.rangeMap.push({
       left: { ...node.pos, col: "red" },
@@ -508,9 +535,9 @@ export class ASMGenerator {
 
   visitConstExpression(node: AstConstExpression) {
     // return llvm.ConstantInt.get(this.context, node.value);
-    if (node.returnType() === "int")
+    if (node.returnType.baseType === "int")
       this.emitter.emitLI(R.A0, node.value as number, `Load constant ${node.value} to a0`);
-    else if (node.returnType() === "string") {
+    else if (node.returnType.baseType === "string") {
       const label = this.newLabel("stringconst");
       let value = node.value as string;
       this.dataSection.push({ label, type: "asciiz", value: value });
@@ -519,9 +546,52 @@ export class ASMGenerator {
   }
 
   visitListExpression(node: AstListExpression) {
-    const label = this.newLabel("tempArray");
-    const tempArrayVar = this.scopeStack.pushLocal(label, node.expressions.length * 4);
-    this.buildArrayAt(node.expressions, tempArrayVar.fpoffset, label);
+    // expr in form [e,e,e,...]
+
+    // create a new local variable on stack to hold the array
+    const anonListID = this.newLabel("anonList");
+    const anonListVar = this.scopeStack.pushLocal(anonListID, node.expressions.length * 4);
+
+    this.emitter.emitADDI(
+      R.SP,
+      R.SP,
+      -anonListVar.size,
+      `reserve stack for anon[${node.expressions.length}]`
+    );
+
+    this.buildArrayAt(node.expressions, anonListVar.fpoffset, anonListID);
+
+    console.log(
+      "visitListExpression",
+      this.scopeStack.getCurrentContext().FP,
+      this.scopeStack.getLocalVarOffset(anonListID).fpoffset,
+      4096 +
+        this.scopeStack.getCurrentContext().FP +
+        this.scopeStack.getLocalVarOffset(anonListID).fpoffset
+    );
+
+    // set A0 to array address
+    this.emitter.emitLI(
+      R.A0,
+      4096 +
+        this.scopeStack.getCurrentContext().FP +
+        8 +
+        this.scopeStack.getLocalVarOffset(anonListID).fpoffset,
+      "A0 = list[0] address"
+    );
+  }
+
+  calcArrayOffset(id: string, indexExpressions: AstExpression[]) {
+    const offset = this.scopeStack.getLocalVarOffset(id).fpoffset;
+    this.emitter.emitADDI(R.A0, R.FP, offset, `get pointer to start of array ${id}`);
+    this.pushStack(R.A0, "push array pointer to stack");
+
+    // calculate e of x[e], result in A0
+    this.visitExpression(indexExpressions[0]);
+
+    this.popStack(R.A1, "pop array pointer off stack");
+    this.emitter.emitSLLI(R.A0, R.A0, 2, "Index in bytes");
+    this.emitter.emitADD(R.A0, R.A1, R.A0, "array pointer + index in bytes");
   }
 
   visitVariableExpression(node: AstVariableExpression) {
@@ -531,16 +601,7 @@ export class ASMGenerator {
     // expression is of form x[e] where e is an expression
     if (node.indexExpressions) {
       // todo: implement multidimensional referencing ie x[e0][e1]...
-
-      this.emitter.emitADDI(R.A0, R.FP, offset, `get pointer to start of array ${id}`);
-      this.pushStack(R.A0, "push array pointer to stack");
-
-      // calculate e of x[e], result in A0
-      this.visitExpression(node.indexExpressions[0]);
-
-      this.popStack(R.A1, "pop array pointer off stack");
-      this.emitter.emitSLLI(R.A0, R.A0, 2, "Index in bytes");
-      this.emitter.emitADD(R.A0, R.A1, R.A0, "array pointer + index in bytes");
+      this.calcArrayOffset(id, node.indexExpressions);
 
       this.emitter.emitLW(R.A0, R.A0, 0, `retrieve ${id}[A0]`);
     } else {
@@ -548,7 +609,7 @@ export class ASMGenerator {
         R.A0,
         R.FP,
         offset,
-        `retrieve ${offset <= 0 ? "func param" : "local variable"} ${node.declaration.id}`
+        `retrieve ${offset >= 0 ? "func param" : "local variable"} ${node.declaration.id}`
       );
     }
   }

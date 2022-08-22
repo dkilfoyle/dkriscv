@@ -1,5 +1,5 @@
-import { Table, TableContainer, Td, Th, Tr, Tbody, Thead, HStack } from "@chakra-ui/react";
-import { useContext } from "react";
+import { Table, TableContainer, Td, Th, Tr, Tbody, Thead, HStack, Button } from "@chakra-ui/react";
+import { useContext, useState } from "react";
 import { ComputerContext } from "../../App";
 import { memSize } from "../../simulator/System";
 import { getBytes } from "../../utils/bits";
@@ -19,7 +19,7 @@ export const Stack = (props: { highlightRange?: [number, number] }) => {
   // const [memFormat, setMemFormat] = useState("bytes");
   const { FormatSelector, format } = useFormat("8", "8DUS");
 
-  const formatMem = (i) => {
+  const formatMem = (i: number) => {
     switch (format) {
       case "8":
         return (
@@ -50,7 +50,7 @@ export const Stack = (props: { highlightRange?: [number, number] }) => {
       case "D":
         return <Td>{memory.localRead(i, 4)}</Td>;
       case "U":
-        return <Td>{memory.localRead(i, 4) >>> 0}</Td>;
+        return <Td>{memory.localRead(i * 4, 4) >>> 0}</Td>;
       case "S":
         return (
           <Td>
@@ -66,14 +66,41 @@ export const Stack = (props: { highlightRange?: [number, number] }) => {
   const stackSizeWords = (memSize - computer.cpu.getX(2)) / 4 + 1;
   const stackAddresses = [...Array(stackSizeWords)].map((_, i) => memSize - i * 4);
 
-  console.log("update stack");
+  const [addressFormat, setAddressFormat] = useState("H");
+  const formatAddress = (addr: number) => {
+    switch (addressFormat) {
+      case "H":
+        return addr.toString(16).padStart(8, "0");
+      case "D":
+        return addr.toString(10).padStart(8, "0");
+      case "F":
+        return (addr - computer.cpu.getX(8)).toString(10).padStart(8);
+    }
+  };
+  const toggleAddressFormat = () => {
+    switch (addressFormat) {
+      case "H":
+        setAddressFormat("D");
+        break;
+      case "D":
+        setAddressFormat("F");
+        break;
+      case "F":
+        setAddressFormat("H");
+        break;
+    }
+  };
 
   return (
     <TableContainer className="ramTable">
       <Table size="sm">
         <Thead>
           <Tr>
-            <Th>Stack</Th>
+            <Th>
+              <Button size="xs" variant="ghost" onClick={toggleAddressFormat}>
+                <span style={{ fontWeight: 700 }}>STACK</span>
+              </Button>
+            </Th>
             <Th>
               <FormatSelector />
             </Th>
@@ -82,7 +109,7 @@ export const Stack = (props: { highlightRange?: [number, number] }) => {
         <Tbody fontFamily="monospace">
           {stackAddresses.map((addr) => (
             <Tr key={addr} style={style(addr)}>
-              <Td>{addr.toString(16).padStart(8, "0")}</Td>
+              <Td style={{ textAlign: "end" }}>{formatAddress(addr)}</Td>
               {formatMem(addr)}
             </Tr>
           ))}

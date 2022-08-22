@@ -9,7 +9,7 @@ import { ChakraProvider, theme } from "@chakra-ui/react";
 import { Schematic } from "./ui/schematic/schematic";
 import { ASMRootNode } from "./languages/riv32asm/parser/astNodes";
 import { Instruction } from "./languages/riv32asm/parser/Instruction";
-import { AstCNode, AstError } from "./languages/simpleC/parser/astNodes";
+import { AstCNode } from "./languages/simpleC/parser/astNodes";
 
 import { ExpandButton, Mosaic, MosaicWindow } from "react-mosaic-component";
 import "react-mosaic-component/react-mosaic-component.css";

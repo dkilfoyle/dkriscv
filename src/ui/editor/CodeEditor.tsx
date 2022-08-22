@@ -2,7 +2,7 @@ import { lintGutter, linter, Diagnostic } from "@codemirror/lint";
 import { basicSetup } from "codemirror";
 import { EditorView } from "@codemirror/view";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
-import { CharStreams, CommonTokenStream, Lexer, ParserRuleContext } from "antlr4ts";
+import { CharStreams, CommonTokenStream, Lexer } from "antlr4ts";
 import { useEffect, useRef, useState } from "react";
 import { simpleC } from "../../languages/simpleC/codemirror/simplec-lang";
 import { Decoration } from "@codemirror/view";
@@ -16,17 +16,12 @@ import { ASMRootNode } from "../../languages/riv32asm/parser/astNodes";
 import { SimpleCLexer } from "../../languages/simpleC/parser/antlr/SimpleCLexer";
 import { SimpleCParser } from "../../languages/simpleC/parser/antlr/SimpleCParser";
 import { SimpleCAstBuilder } from "../../languages/simpleC/parser/astBuilder";
-import { AstCNode, AstRepl } from "../../languages/simpleC/parser/astNodes";
+import { AstCNode } from "../../languages/simpleC/parser/astNodes";
 import { ErrorListener } from "../../languages/simpleC/parser/ErrorListener";
 import { simpleASM } from "../../languages/riv32asm/codemirror/simpleasm-lang";
 import { CodeHighlightInfo } from "../../utils/antlr";
 import { breakpointEffect, breakpointGutter } from "./breakpoint";
 import { CompilerError } from "../../compilers/riscv/ASMGenerator";
-
-const baseTheme = EditorView.baseTheme({
-  "&light .cm-zebraStripe": { backgroundColor: "#d4fafa" },
-  "&dark .cm-zebraStripe": { backgroundColor: "#1a2727" },
-});
 
 let lexer: Lexer,
   parser: SimpleCParser | SimpleASMParser,

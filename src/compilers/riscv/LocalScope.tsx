@@ -18,6 +18,10 @@ export interface LocalVariable {
 }
 
 export class LocalScopeStack extends ScopeStack<LocalVariable, LocalScope> {
+  reset() {
+    this.scopes.length = 0;
+    this.enterScope("topLevel", { FP: 0, SP: 0 });
+  }
   pushFunctionParams(node: AstFunctionDeclaration) {
     // FP+8    Arg2
     // FP+4    Arg1
@@ -61,12 +65,19 @@ export class LocalScopeStack extends ScopeStack<LocalVariable, LocalScope> {
     return localVar;
   }
   enterFunction(name: string) {
-    // FP: is the SP (relative to function FP) at block entry.
-    // It will be -2*WORD_SIZE after the AR has been pushed
-    return this.enterScope(`function ${name}`, { FP: -2 * WORD_SIZE, SP: 0 });
+    // Caller function                Callee function
+    // a0
+    // a1
+    // an     SP                      FP
+    //                                RA
+    //                                FP of caller           SP = -8 relative to FP
+    //
+
+    const parentContext = this.top().context;
+    return this.enterScope(`function ${name}`, { FP: parentContext.SP, SP: -2 * WORD_SIZE });
   }
   enterBlock(name: string) {
     const parentContext = this.top().context;
-    this.enterScope(name, { FP: parentContext.FP + parentContext.SP, SP: 0 });
+    return this.enterScope(name, { FP: parentContext.FP + parentContext.SP, SP: 0 });
   }
 }

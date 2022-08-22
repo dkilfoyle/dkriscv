@@ -63,7 +63,7 @@ import {
   AstListExpression,
 } from "./astNodes";
 import { ScopeStack } from "./scopeStack";
-import { AllowedTypes } from "./signature";
+import { AllowedTypes, SimpleCType } from "./signature";
 
 export interface AstBuildResult {
   root: AstCNode | ASMRootNode;
@@ -94,7 +94,7 @@ export class SimpleCAstBuilder
   }
 
   createStdLibFunction(ctx: ParserRuleContext, id: string, params: AstVariableDeclaration[]) {
-    const funcDecl = new AstFunctionDeclaration(ctx, "void", id, params);
+    const funcDecl = new AstFunctionDeclaration(ctx, new SimpleCType("void"), id, params);
     this.scopeStack.setSymbol(id, funcDecl);
     return funcDecl;
   }
@@ -102,7 +102,7 @@ export class SimpleCAstBuilder
   createMainFunction(ctx: ParserRuleContext, body: AstBlock) {
     if (!(body.body[body.body.length - 1] instanceof AstReturn))
       body.body.push(new AstReturn(ctx, new AstConstExpression(ctx, 0, "int")));
-    const main = new AstFunctionDeclaration(ctx, "int", "main", [], body);
+    const main = new AstFunctionDeclaration(ctx, new SimpleCType("int"), "main", [], body);
     this.scopeStack.setSymbol("main", main);
     return main;
   }
@@ -251,7 +251,7 @@ export class SimpleCAstBuilder
   }
 
   visitNullExpression(ctx: NullExpressionContext) {
-    return new AstConstExpression(ctx, null, "null");
+    return new AstConstExpression(ctx, null, "int");
   }
 
   // statements
@@ -324,13 +324,21 @@ export class SimpleCAstBuilder
 
     if (params.length !== funDecl.signature.paramTypes.length)
       return this.addError(new AstError(ctx, `function ${id} incorrect number of params`));
-    const matches = params.every((param, i) => {
-      // console.log(i, param);
-      return param.returnType() === funDecl.signature.paramTypes[i];
+
+    params.forEach((param, i) => {
+      if (param.returnType.toString() !== funDecl.signature.paramTypes[i].toString()) {
+        debugger;
+        return this.addError(
+          new AstError(
+            ctx,
+            `Parameter type mismatch: ${param.returnType.toString()} != ${funDecl.signature.paramTypes[
+              i
+            ].toString()}`
+          )
+        );
+      }
     });
-    if (!matches) {
-      return this.addError(new AstError(ctx, `function ${id} incorrect param typeS`));
-    }
+
     return new AstFunctionCall(ctx, funDecl, params);
   }
 
@@ -376,7 +384,7 @@ export class SimpleCAstBuilder
       initialStatement,
       new AstWhile(
         ctx,
-        testExpression.returnType() === "bool"
+        testExpression.returnType.toString() === "bool"
           ? testExpression
           : new AstErrorExpression(ctx.expression(), "for test expression must return bool"),
         new AstBlock(ctx, [block, updateAssignment])
@@ -396,7 +404,7 @@ export class SimpleCAstBuilder
     const block = this.visitStatement(ctx.statement());
     return new AstWhile(
       ctx,
-      testExpression.returnType() === "bool"
+      testExpression.returnType.toString() === "bool"
         ? testExpression
         : new AstErrorExpression(ctx.expression(), "for test expression must return bool"),
       block
@@ -435,7 +443,7 @@ export class SimpleCAstBuilder
     } else params = [];
 
     // push declaration onto the scope stack to allow for recursive calling within the body
-    const funcDecl = new AstFunctionDeclaration(ctx, funType, id, params);
+    const funcDecl = new AstFunctionDeclaration(ctx, new SimpleCType(funType), id, params);
     this.scopeStack.setSymbol(id, funcDecl);
 
     const body = this.visitReturnBlock(ctx.returnBlock(), `fun(${id})body`);
